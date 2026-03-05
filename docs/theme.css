@@ -1,0 +1,21 @@
+:root {
+    --pdoc-background: #141414;
+    font-family: "Inter", sans-serif;
+}
+
+.pdoc {
+    --text: #bbb;
+    --muted: #888;
+    --link: #58a6ff;
+    --link-hover: #3989ff;
+    --code: #353535;
+    --active: #444;
+
+    --accent: #252525;
+    --accent2: #333;
+
+    --nav-hover: rgba(0, 0, 0, 0.1);
+    --name: #77C1FF;
+    --def: #0cdd0c;
+    --annotation: #00c037;
+}

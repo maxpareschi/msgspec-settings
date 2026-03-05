@@ -181,7 +181,7 @@ class CliSource(DataSource):
         emitted_json_opts: set[str] = set()
 
         ctx_settings: dict[str, Any] = {
-            "help_option_names": ["-h", "--help", "-?"],
+            "help_option_names": ["--help", "-?"],
             "ignore_unknown_options": True,
             "allow_extra_args": True,
             "rich_help_config": {

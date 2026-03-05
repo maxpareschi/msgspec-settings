@@ -1,3 +1,12 @@
+"""msgspec_settings base classes.
+
+This module provides:
+
+- ``DataModel``: base class for data models
+- ``DataSource``: base class for data sources
+- ``datasources(...)``: class decorator to attach datasource templates to a DataModel class
+"""
+
 import copy
 
 from collections.abc import Mapping
@@ -253,6 +262,8 @@ def datasources(*datasource_args: DataSource):
             cls.__datasources__ = tuple(
                 datasource.clone() for datasource in datasource_args
             )
+        else:
+            cls.__datasources__ = None
         return cls
 
     return decorator

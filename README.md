@@ -1,6 +1,6 @@
 
 <p align="center">
-    <img src="docs/msgspec-settings-logo.svg" width="35%" alt="msgspec-settings">
+    <img src="docs/assets/msgspec-settings-logo.svg" width="35%" alt="msgspec-settings">
 </p>
 
 # msgspec-settings
