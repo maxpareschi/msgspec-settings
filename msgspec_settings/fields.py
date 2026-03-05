@@ -142,7 +142,14 @@ def _build_entry_meta(meta_kwargs: dict[str, Any]) -> Meta:
 
 @dataclass(slots=True)
 class EntryInfo:
-    """Sentinel value used by ``entry(...)`` during metaclass rewriting."""
+    """Sentinel value produced by :func:`entry` before metaclass rewriting.
+
+    Attributes:
+        default: Field default value or ``NODEFAULT``.
+        default_factory: Field default factory or ``NODEFAULT``.
+        name: Optional encoded/alias field name.
+        meta_kwargs: Deferred ``Meta`` keyword arguments.
+    """
 
     default: Any
     default_factory: Any
@@ -152,7 +159,12 @@ class EntryInfo:
 
 @dataclass(slots=True)
 class GroupInfo:
-    """Sentinel value used by ``group(...)`` during metaclass rewriting."""
+    """Sentinel value produced by :func:`group` before metaclass rewriting.
+
+    Attributes:
+        collapsed: UI hint for collapsed rendering.
+        mutable: UI hint indicating mutable grouped value.
+    """
 
     collapsed: bool
     mutable: bool
@@ -197,7 +209,14 @@ def entry(value: Any = NODEFAULT, *, name: str | None = None, **kwargs: Any) -> 
 
 
 def _is_zero_arg_constructible(cls: type[Any]) -> bool:
-    """Return whether ``cls()`` is valid without required parameters."""
+    """Return whether ``cls`` can be called without required arguments.
+
+    Args:
+        cls: Class to inspect.
+
+    Returns:
+        ``True`` when ``cls()`` is valid without required parameters.
+    """
     try:
         sig = inspect.signature(cls)
     except (TypeError, ValueError):
@@ -270,6 +289,9 @@ def apply_entry_defaults(
     Args:
         namespace: Class namespace being processed.
         reserved_attributes: Field names that must not be rewritten.
+
+    Returns:
+        ``None``.
     """
     annotations = namespace.get("__annotations__", {})
     for name in list(annotations):

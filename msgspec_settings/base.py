@@ -1,10 +1,9 @@
-"""msgspec_settings base classes.
+"""Core model and source abstractions for ``msgspec_settings``.
 
-This module provides:
-
-- ``DataModel``: base class for data models
-- ``DataSource``: base class for data sources
-- ``datasources(...)``: class decorator to attach datasource templates to a DataModel class
+This module defines:
+- :class:`DataModel`, the typed configuration container.
+- :class:`DataSource`, the source contract used to produce mapping patches.
+- :func:`datasources`, the class decorator used to bind source templates.
 """
 
 import copy
@@ -17,6 +16,7 @@ import msgspec
 
 from .fields import apply_entry_defaults
 from .merge import deep_merge_into
+from .mapping import split_mapping_by_model_fields
 
 
 _JSON_ENCODER: msgspec.json.Encoder | None = None
@@ -24,10 +24,10 @@ _LOCK: Lock = Lock()
 
 
 def get_json_encoder() -> msgspec.json.Encoder:
-    """Return the shared JSON encoder used by all data models.
+    """Return the process-wide JSON encoder singleton.
 
     Returns:
-        Singleton msgspec JSON encoder instance.
+        Shared :class:`msgspec.json.Encoder` instance.
     """
     global _JSON_ENCODER
     with _LOCK:
@@ -37,7 +37,7 @@ def get_json_encoder() -> msgspec.json.Encoder:
 
 
 class DataModelMeta(msgspec.StructMeta):
-    """Metaclass that enforces DataModel conventions and load-on-init behavior."""
+    """Metaclass enforcing ``DataModel`` conventions and load behavior."""
 
     def __new__(
         cls,
@@ -46,19 +46,19 @@ class DataModelMeta(msgspec.StructMeta):
         namespace: dict[str, Any],
         **kwargs: Any,
     ) -> type["DataModel"]:
-        """Create a new DataModel/DataSource class.
+        """Create a ``DataModel`` or ``DataSource`` subclass.
 
         Args:
-            name: Class name.
-            bases: Base classes.
-            namespace: Class namespace.
-            **kwargs: Extra msgspec Struct options.
+            name: Class name being created.
+            bases: Tuple of base classes.
+            namespace: Mutable class namespace.
+            **kwargs: Additional ``msgspec.Struct`` options.
 
         Returns:
-            The created class object.
+            Created class object.
 
         Raises:
-            TypeError: If reserved attributes are explicitly declared.
+            TypeError: If a reserved runtime attribute is declared as a field.
         """
         if not any(isinstance(base, DataModelMeta) for base in bases):
             return super().__new__(cls, name, bases, namespace, **kwargs)
@@ -67,12 +67,20 @@ class DataModelMeta(msgspec.StructMeta):
             "__json_encoder__",
             "__json_decoder__",
             "__schema__",
-            "__datasources__",
+            "__datasource_defs__",
+            "__datasource_instances__",
+            "__unmapped_cache__",
+            "__unmapped_kwargs__",
         }
 
         for attr in reserved_attributes:
             if attr in namespace:
                 raise TypeError(f"Attribute {attr} is reserved")
+
+        annotations = namespace.get("__annotations__", {})
+        for field_name in annotations:
+            if field_name in reserved_attributes:
+                raise TypeError(f"Field name {field_name} is reserved")
 
         kwargs.setdefault("kw_only", True)
         kwargs.setdefault("dict", True)
@@ -84,14 +92,18 @@ class DataModelMeta(msgspec.StructMeta):
         return super().__new__(cls, name, bases, namespace, **kwargs)
 
     def __call__(cls: type["DataModel"], *args: Any, **kwargs: Any) -> "DataModel":
-        """Instantiate a DataModel from merged datasource data and explicit kwargs.
+        """Instantiate and validate a ``DataModel`` instance.
+
+        For regular models, configured datasource definitions are cloned,
+        loaded, and merged before final conversion. For ``DataSource``
+        subclasses, this method behaves like normal struct instantiation.
 
         Args:
-            *args: Positional arguments (not supported).
-            **kwargs: Explicit field overrides.
+            *args: Positional arguments. Not supported.
+            **kwargs: Field values and explicit overrides.
 
         Returns:
-            A validated DataModel instance.
+            Validated model instance with runtime datasource state attached.
 
         Raises:
             TypeError: If positional arguments are provided.
@@ -102,55 +114,94 @@ class DataModelMeta(msgspec.StructMeta):
                 "Use keyword arguments instead."
             )
 
-        if cls.__datasources__ is not None and not issubclass(cls, DataSource):
-            kwargs = cls.from_datasources(*cls.__datasources__, **kwargs)
+        datasource_instances: tuple["DataSource", ...] = ()
+        unmapped_cache: dict[str, Any] | None = {}
 
-        return msgspec.convert(kwargs, type=cls, from_attributes=True, str_keys=True)
+        if cls.__datasource_defs__ is not None and not issubclass(cls, DataSource):
+            kwargs, datasource_instances = cls._collect_datasources_payload(
+                *cls.__datasource_defs__, **kwargs
+            )
+            unmapped_cache = None
+
+        instance = msgspec.convert(
+            kwargs, type=cls, from_attributes=True, str_keys=True
+        )
+        return cls._setup_instance(
+            instance,
+            datasource_instances=datasource_instances,
+            unmapped_cache=unmapped_cache,
+        )
 
 
 class DataModel(msgspec.Struct, metaclass=DataModelMeta):
-    """Base structured data container with optional datasource loading."""
+    """Base typed settings model with optional datasource composition."""
 
     __json_encoder__: ClassVar[msgspec.json.Encoder] = get_json_encoder()
     __json_decoder__: ClassVar[msgspec.json.Decoder | None] = None
     __schema__: ClassVar[dict[str, Any] | None] = None
-    __datasources__: ClassVar[tuple["DataSource", ...] | None] = None
+    __datasource_defs__: ClassVar[tuple["DataSource", ...] | None] = None
+
+    @staticmethod
+    def _setup_instance(
+        instance: "DataModel",
+        datasource_instances: tuple["DataSource", ...] | None = None,
+        unmapped_cache: dict[str, Any] | None = None,
+    ) -> "DataModel":
+        """Attach runtime datasource and unmapped state to one instance.
+
+        Args:
+            instance: Model instance to mutate.
+            datasource_instances: Runtime source instances used to build
+                ``instance``.
+            unmapped_cache: Precomputed unmapped cache, or ``None`` to defer
+                computation until unmapped payload access.
+
+        Returns:
+            Same ``instance`` with runtime attributes initialized.
+        """
+        if datasource_instances is None:
+            datasource_instances = ()
+        instance.__datasource_instances__ = datasource_instances
+        instance.__unmapped_cache__ = unmapped_cache
+        return instance
 
     @classmethod
     def from_data(cls, data: dict[str, Any]) -> Self:
-        """Build an instance from a plain data mapping.
+        """Build an instance from a plain mapping payload.
 
         Args:
-            data: Input mapping.
+            data: Input mapping to validate against ``cls``.
 
         Returns:
-            Validated model instance.
+            Validated model instance with empty runtime datasource state.
         """
-        return msgspec.convert(data, type=cls, from_attributes=True, str_keys=True)
+        instance = msgspec.convert(data, type=cls, from_attributes=True, str_keys=True)
+        return cls._setup_instance(instance)
 
     @classmethod
     def from_json(cls, json_str: str | bytes) -> Self:
-        """Build an instance from JSON bytes/string.
+        """Build an instance from a JSON payload.
 
         Args:
-            json_str: JSON payload.
+            json_str: JSON string or bytes.
 
         Returns:
-            Decoded model instance.
+            Decoded model instance with empty runtime datasource state.
         """
         if cls.__json_decoder__ is None:
             cls.__json_decoder__ = msgspec.json.Decoder(type=cls)
-        return cls.__json_decoder__.decode(json_str)
+        instance = cls.__json_decoder__.decode(json_str)
+        return cls._setup_instance(instance)
 
     @classmethod
     def model_json_schema(cls, indent: int = 0) -> str:
-        """Return the model JSON schema as a JSON string.
+        """Serialize the model JSON schema.
 
         Args:
-            indent: Optional pretty-print indentation level.
+            indent: Pretty-print indentation level. ``0`` disables formatting.
 
         Returns:
-            JSON schema string.
+            JSON schema string representation.
         """
         if cls.__schema__ is None:
             cls.__schema__ = msgspec.json.schema(cls)
@@ -160,110 +211,309 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
         return json_str
 
     @classmethod
-    def from_datasources(
+    def get_datasources_payload(
         cls,
         *datasource_args: "DataSource",
         **kwargs: Any,
     ) -> Mapping[str, Any]:
-        """Load and merge data from datasources plus explicit keyword overrides.
+        """Merge payloads from datasource instances and explicit keyword values.
 
-        Datasources are evaluated left-to-right, then keyword arguments are merged
-        last (highest precedence).
+        Datasources are evaluated left-to-right. Explicit ``kwargs`` are merged
+        last and therefore have highest precedence.
 
         Args:
-            *datasource_args: Datasource instances used to load patches.
+            *datasource_args: Datasource instances to execute.
             **kwargs: Explicit field overrides.
 
         Returns:
-            Merged mapping.
+            Merged mapping ready for ``msgspec.convert``.
 
         Raises:
-            TypeError: If any datasource returns a non-mapping payload.
+            TypeError: If any datasource returns a non-mapping value.
         """
-        merged_data: dict[str, Any] = {}
-        for datasource in datasource_args:
-            datasource_data = datasource.clone().load(model=cls)
-            if not isinstance(datasource_data, Mapping):
-                raise TypeError(
-                    f"DataSource {datasource.__class__.__name__} returned a "
-                    "non-mapping value"
-                )
-            deep_merge_into(merged_data, datasource_data)
-        if kwargs:
-            deep_merge_into(merged_data, kwargs)
+        merged_data, _ = cls._collect_datasources_payload(*datasource_args, **kwargs)
         return merged_data
 
-    def model_dump(self) -> dict[str, Any]:
-        """Serialize the model into Python builtins.
+    @classmethod
+    def _collect_datasources_payload(
+        cls,
+        *datasource_defs: "DataSource",
+        **kwargs: Any,
+    ) -> tuple[dict[str, Any], tuple["DataSource", ...]]:
+        """Clone datasource definitions, load them, and merge payloads.
+
+        Args:
+            *datasource_defs: Datasource template instances bound on the class.
+            **kwargs: Explicit keyword overrides merged after source payloads.
 
         Returns:
-            Dictionary representation of the instance.
+            Tuple ``(merged_payload, datasource_instances)`` where
+            ``datasource_instances`` are the cloned runtime instances used for
+            this build.
+
+        Raises:
+            TypeError: If any source returns a non-mapping value.
+        """
+        merged_data: dict[str, Any] = {}
+        datasource_instances: list["DataSource"] = []
+
+        for datasource_def in datasource_defs:
+            datasource_instance = datasource_def.clone()
+            datasource_data = datasource_instance.resolve(model=cls)
+            if not isinstance(datasource_data, Mapping):
+                raise TypeError(
+                    f"DataSource {datasource_def.__class__.__name__} returned a "
+                    "non-mapping value"
+                )
+
+            deep_merge_into(merged_data, datasource_data)
+            datasource_instances.append(datasource_instance)
+
+        if kwargs:
+            deep_merge_into(merged_data, kwargs)
+
+        return merged_data, tuple(datasource_instances)
+
+    def model_dump(self) -> dict[str, Any]:
+        """Serialize this instance into Python builtins.
+
+        Returns:
+            ``dict`` representation containing model field values.
         """
         return msgspec.to_builtins(self)
 
     def model_dump_json(self, indent: int = 0) -> str:
-        """Serialize the model to a JSON string.
+        """Serialize this instance to JSON text.
 
         Args:
-            indent: Optional pretty-print indentation level.
+            indent: Pretty-print indentation level. ``0`` disables formatting.
 
         Returns:
-            JSON string representation.
+            JSON string representation of the model.
         """
-        json_str = self.__json_encoder__.encode(self)
+        json_str = self.__json_encoder__.encode(self).decode()
         if indent > 0:
             return msgspec.json.format(json_str, indent=indent)
-        return json_str.decode()
+        return json_str
+
+    def get_unmapped_payload(self) -> dict[str, Any]:
+        """Return lazily merged unmapped payload fragments from all sources.
+
+        Returns:
+            Deep-merged mapping of source-level unmapped keys, in source order.
+            A shallow copy is returned so callers cannot mutate the cache
+            directly.
+        """
+        cached = getattr(self, "__unmapped_cache__", None)
+        if isinstance(cached, dict):
+            return dict(cached)
+
+        merged: dict[str, Any] = {}
+        datasource_instances = getattr(self, "__datasource_instances__", ())
+        for datasource in datasource_instances:
+            source_unmapped = getattr(datasource, "__unmapped_kwargs__", None)
+            if isinstance(source_unmapped, Mapping) and source_unmapped:
+                deep_merge_into(merged, source_unmapped)
+
+        self.__unmapped_cache__ = merged
+        return dict(merged)
 
 
 class DataSource(DataModel):
-    """Base class for data-producing sources."""
+    """Base class for configuration sources that emit mapping patches."""
 
-    def load(self, model: type[DataModel] | None = None) -> dict[str, Any]:
-        """Load data from the source.
+    def _normalize_load_result(
+        self,
+        result: Mapping[str, Any] | tuple[Mapping[str, Any], Mapping[str, Any]],
+    ) -> tuple[Mapping[str, Any], Mapping[str, Any] | None]:
+        """Normalize ``load`` output into ``(payload, unmapped_override)``.
+
+        Args:
+            result: Return value from ``load``.
+
+        Returns:
+            Tuple containing payload mapping and optional unmapped override.
+
+        Raises:
+            TypeError: If the return value does not follow the expected shape.
+        """
+        if isinstance(result, tuple):
+            if len(result) != 2:
+                raise TypeError(
+                    f"DataSource {self.__class__.__name__} load() must return "
+                    "Mapping or tuple[Mapping, Mapping]"
+                )
+            payload, unmapped = result
+            if not isinstance(payload, Mapping) or not isinstance(unmapped, Mapping):
+                raise TypeError(
+                    f"DataSource {self.__class__.__name__} load() tuple must be "
+                    "tuple[Mapping, Mapping]"
+                )
+            return payload, unmapped
+
+        if not isinstance(result, Mapping):
+            raise TypeError(
+                f"DataSource {self.__class__.__name__} load() must return "
+                "Mapping or tuple[Mapping, Mapping]"
+            )
+        return result, None
+
+    def _reset_instance(self) -> None:
+        """Reset per-load runtime state on this source instance.
+
+        This clears any previously collected unmapped keys.
+
+        Returns:
+            ``None``.
+        """
+        self.__unmapped_kwargs__ = {}
+
+    def _set_unmapped(self, unmapped: Mapping[str, Any]) -> None:
+        """Store unmapped payload values on this source instance.
+
+        Args:
+            unmapped: Mapping of keys that could not be mapped to model fields.
+
+        Returns:
+            ``None``.
+        """
+        self.__unmapped_kwargs__ = dict(unmapped)
+
+    def _split_payload_against_model(
+        self,
+        payload: Mapping[str, Any],
+        model: type[msgspec.Struct] | None,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Split one payload into mapped and unmapped sections.
+
+        Args:
+            payload: Raw payload produced by a source.
+            model: Target model type used for key recognition.
+
+        Returns:
+            Tuple ``(mapped, unmapped)``.
+        """
+        if model is None:
+            return dict(payload), {}
+        return split_mapping_by_model_fields(payload, model)
+
+    def _finalize_payload(
+        self,
+        payload: Mapping[str, Any],
+        model: type[msgspec.Struct] | None,
+        unmapped_override: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Finalize a source payload and persist source unmapped state.
+
+        Args:
+            payload: Raw source payload.
+            model: Target model type used for split logic.
+            unmapped_override: Optional unmapped mapping to merge on top of
+                unmapped values inferred from ``payload``.
+
+        Returns:
+            Model-mapped payload fragment that should be merged into model input.
+        """
+        mapped, unmapped = self._split_payload_against_model(payload, model)
+
+        if unmapped_override is not None:
+            merged_unmapped = dict(unmapped)
+            deep_merge_into(merged_unmapped, unmapped_override)
+            self._set_unmapped(merged_unmapped)
+        else:
+            self._set_unmapped(unmapped)
+
+        return mapped
+
+    def load(
+        self,
+        model: type[DataModel] | None = None,
+    ) -> Mapping[str, Any] | tuple[Mapping[str, Any], Mapping[str, Any]]:
+        """Return raw source data before mapping finalization.
+
+        Subclasses should override this method to implement source-specific
+        loading behavior. :meth:`resolve` performs instance reset,
+        return-shape normalization, and finalize/split logic.
 
         Args:
             model: Optional target model requesting data.
 
         Returns:
-            Mapping patch to merge into model input data.
+            Either:
+            - mapping payload to be finalized against ``model``, or
+            - tuple ``(payload, unmapped_override)``.
         """
         raise NotImplementedError
 
-    def clone(self) -> Self:
-        """Clone datasource configuration to avoid shared mutable state.
+    def resolve(self, model: type[DataModel] | None = None) -> dict[str, Any]:
+        """Load and finalize source data for safe model merging.
+
+        Args:
+            model: Optional target model requesting data.
 
         Returns:
-            Deep-cloned datasource instance.
+            Model-mapped payload fragment ready for merge.
+        """
+        return self._load(model)
+
+    def _load(self, model: type[DataModel] | None = None) -> dict[str, Any]:
+        """Execute source loading lifecycle for one model resolution.
+
+        This internal wrapper clears per-instance runtime state, calls
+        :meth:`load`, validates the return shape, and finalizes the mapped
+        payload while persisting unmapped state.
+
+        Args:
+            model: Optional target model requesting data.
+
+        Returns:
+            Model-mapped payload fragment ready for merge.
+
+        Raises:
+            TypeError: If ``load`` returns an invalid payload shape.
+        """
+        self._reset_instance()
+        payload, unmapped_override = self._normalize_load_result(self.load(model))
+        return self._finalize_payload(
+            payload, model, unmapped_override=unmapped_override
+        )
+
+    def clone(self) -> Self:
+        """Clone this datasource configuration.
+
+        Returns:
+            Deep-copied datasource instance suitable for per-model execution.
         """
         return copy.deepcopy(self)
 
 
 def datasources(*datasource_args: DataSource):
-    """Class decorator that binds datasource templates to a DataModel class.
+    """Bind datasource template definitions to a ``DataModel`` class.
 
     Args:
-        *datasource_args: Datasource templates evaluated on model construction.
+        *datasource_args: Datasource templates evaluated during model
+            instantiation.
 
     Returns:
-        Decorator that stores cloned datasource templates on the class.
+        Decorator that writes cloned datasource templates to
+        ``cls.__datasource_defs__``.
     """
 
     def decorator(cls: type[DataModel]) -> type[DataModel]:
-        """Attach datasource templates to the decorated class.
+        """Attach datasource templates to one model class.
 
         Args:
             cls: Model class being decorated.
 
         Returns:
-            Same class with datasource templates attached.
+            Same class with datasource definitions attached.
         """
         if datasource_args:
-            cls.__datasources__ = tuple(
+            cls.__datasource_defs__ = tuple(
                 datasource.clone() for datasource in datasource_args
             )
         else:
-            cls.__datasources__ = None
+            cls.__datasource_defs__ = None
         return cls
 
     return decorator

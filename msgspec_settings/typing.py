@@ -73,12 +73,27 @@ def try_json_decode(value: str) -> Any:
 
 
 def _is_union_origin(origin: Any) -> bool:
-    """Return whether ``origin`` represents a union annotation."""
+    """Return whether ``origin`` denotes a union annotation.
+
+    Args:
+        origin: Value from ``typing.get_origin``.
+
+    Returns:
+        ``True`` when ``origin`` is ``typing.Union`` or ``types.UnionType``.
+    """
     return origin in (Union, UnionType)
 
 
 def _coerce_literal_member(value: str, literal_value: Any) -> Any:
-    """Coerce one raw string against one literal member value."""
+    """Coerce one string candidate against one literal member.
+
+    Args:
+        value: Raw input string.
+        literal_value: One member from a ``Literal[...]`` declaration.
+
+    Returns:
+        Coerced value when compatible, otherwise ``_COERCE_FAILED``.
+    """
     if literal_value is None:
         if value.strip() == "":
             return None
@@ -101,7 +116,16 @@ def _coerce_literal_member(value: str, literal_value: Any) -> Any:
 
 
 def _coerce_literal_value(value: str, literal_type: Any) -> Any:
-    """Coerce a string to one valid value of a ``Literal[...]`` annotation."""
+    """Coerce a string to a member of ``Literal[...]``.
+
+    Args:
+        value: Raw input string.
+        literal_type: Literal annotation type.
+
+    Returns:
+        Matching literal member, ``None`` for nullable literal, or
+        ``_COERCE_FAILED``.
+    """
     for literal_member in get_args(literal_type):
         coerced = _coerce_literal_member(value, literal_member)
         if coerced is _COERCE_FAILED:

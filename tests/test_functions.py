@@ -6,7 +6,11 @@ import msgspec
 import pytest
 from msgspec import Meta
 
-from msgspec_settings.mapping import flatten_model_fields_with_alias, map_env_to_model
+from msgspec_settings.mapping import (
+    flatten_model_fields_with_alias,
+    map_env_to_model,
+    split_mapping_by_model_fields,
+)
 from msgspec_settings.merge import dedupe_keep_order, deep_merge_into, set_nested
 from msgspec_settings.typing import (
     _COERCE_FAILED,
@@ -111,3 +115,27 @@ def test_map_env_to_model_rejects_empty_separator() -> None:
     """Empty separator should raise ValueError."""
     with pytest.raises(ValueError, match="nested_separator must be a non-empty"):
         map_env_to_model({"HOST": "x"}, SimpleModel, "")
+
+
+def test_map_env_to_model_can_collect_unmatched() -> None:
+    """Optional unmatched collection should return unresolved env keys."""
+    mapped, unmatched = map_env_to_model(
+        {"HOST": "example.com", "HOTS": "typo"},
+        SimpleModel,
+        collect_unmatched=True,
+    )
+    assert mapped["host"] == "example.com"
+    assert unmatched == {"HOTS": "typo"}
+
+
+def test_split_mapping_by_model_fields_extracts_unknown_nested_keys() -> None:
+    """Mapping split helper should separate known and unknown nested keys."""
+    payload = {
+        "host": "example.com",
+        "extra": "x",
+        "log": {"level": "DEBUG", "levle": "typo"},
+    }
+    mapped, unmapped = split_mapping_by_model_fields(payload, ServerModel)
+
+    assert mapped == {"host": "example.com", "log": {"level": "DEBUG"}}
+    assert unmapped == {"extra": "x", "log": {"levle": "typo"}}

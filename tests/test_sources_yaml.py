@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import msgspec
 import pytest
 
 from msgspec_settings import YamlSource
@@ -34,3 +35,26 @@ def test_invalid_yaml_raises_runtime_error(tmp_path: Path) -> None:
     src = YamlSource(yaml_path=str(path))
     with pytest.raises(RuntimeError, match="Failed to parse YAML"):
         src.load()
+
+
+def test_unmapped_yaml_keys_are_stored_on_source(tmp_path: Path) -> None:
+    """Unknown YAML keys should be split out into source unmapped runtime state."""
+
+    class Log(msgspec.Struct, kw_only=True):
+        level: str = "INFO"
+
+    class Model(msgspec.Struct, kw_only=True):
+        host: str = "localhost"
+        log: Log = msgspec.field(default_factory=Log)
+
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        "host: example.com\nunknown: 1\nlog:\n  level: DEBUG\n  levle: typo\n",
+        encoding="utf-8",
+    )
+
+    src = YamlSource(yaml_path=str(path))
+    data = src.resolve(model=Model)
+
+    assert data == {"host": "example.com", "log": {"level": "DEBUG"}}
+    assert src.__unmapped_kwargs__ == {"unknown": 1, "log": {"levle": "typo"}}

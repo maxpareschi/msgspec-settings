@@ -129,7 +129,7 @@ class DotEnvSource(DataSource):
     Attributes:
         dotenv_path: Dotenv file path.
         dotenv_encoding: Text encoding used to read the file.
-        env_prefix: Optional prefix used to filter keys.
+        env_prefix: Required prefix used to filter keys (MANDATORY!).
         nested_separator: Separator used to represent nesting in keys.
     """
 
@@ -138,19 +138,26 @@ class DotEnvSource(DataSource):
     env_prefix: str = ""
     nested_separator: str = "_"
 
-    def load(self, model: type[msgspec.Struct] | None = None) -> dict[str, Any]:
-        """Read and parse the configured dotenv file.
+    def load(
+        self,
+        model: type[msgspec.Struct] | None = None,
+    ) -> dict[str, Any] | tuple[dict[str, Any], dict[str, Any]]:
+        """Read dotenv variables from file and map them to config data.
 
         Args:
             model: Optional target model used for key resolution and coercion.
 
         Returns:
-            Mapping of configuration values. When model is ``None``, returns a
-            flat mapping with lowercased keys.
+            Mapping of model-recognized values. When ``model`` is ``None``,
+            returns a flat lowercase mapping.
 
         Raises:
+            ValueError: If ``env_prefix`` is empty.
             RuntimeError: If reading/parsing the file fails.
         """
+        if not isinstance(self.env_prefix, str) or self.env_prefix.strip() == "":
+            raise ValueError("env_prefix must be a non-empty string")
+
         if not self.dotenv_path:
             return {}
 
@@ -168,27 +175,29 @@ class DotEnvSource(DataSource):
         if not raw_dotenv:
             return {}
 
-        prefix_upper = self.env_prefix.upper()
-        if prefix_upper and not prefix_upper.endswith("_"):
+        prefix_upper = self.env_prefix.strip().upper()
+        if not prefix_upper.endswith("_"):
             prefix_upper += "_"
         prefix_len = len(prefix_upper)
 
         filtered: dict[str, str] = {}
-        if prefix_upper:
-            for key, value in raw_dotenv.items():
-                key_upper = key.upper()
-                if key_upper.startswith(prefix_upper):
-                    stripped = key_upper[prefix_len:]
-                    if stripped:
-                        filtered[stripped] = value
-        else:
-            for key, value in raw_dotenv.items():
-                filtered[key.upper()] = value
+        for key, value in raw_dotenv.items():
+            key_upper = key.upper()
+            if key_upper.startswith(prefix_upper):
+                stripped = key_upper[prefix_len:]
+                if stripped:
+                    filtered[stripped] = value
 
         if not filtered:
             return {}
 
         if model is not None:
-            return map_env_to_model(filtered, model, self.nested_separator)
+            mapped, unmatched = map_env_to_model(
+                filtered,
+                model,
+                self.nested_separator,
+                collect_unmatched=True,
+            )
+            return mapped, unmatched
 
         return {key.lower(): value for key, value in filtered.items()}

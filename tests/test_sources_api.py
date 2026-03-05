@@ -2,6 +2,7 @@
 
 from urllib.error import URLError
 
+import msgspec
 import pytest
 
 from msgspec_settings import APISource
@@ -100,7 +101,9 @@ def test_missing_root_node_returns_empty(monkeypatch: pytest.MonkeyPatch) -> Non
 
     monkeypatch.setattr("msgspec_settings.sources.api.urlopen", fake_urlopen)
 
-    assert APISource(api_url="https://example.test/config", root_node="data").load() == {}
+    assert (
+        APISource(api_url="https://example.test/config", root_node="data").load() == {}
+    )
 
 
 def test_failed_request_raises_runtime_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -127,3 +130,29 @@ def test_invalid_json_raises_runtime_error(monkeypatch: pytest.MonkeyPatch) -> N
     src = APISource(api_url="https://example.test/config")
     with pytest.raises(RuntimeError, match="Failed to parse API response JSON"):
         src.load()
+
+
+def test_unmapped_api_keys_are_stored_on_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unknown API keys should be split out into source unmapped runtime state."""
+
+    class Log(msgspec.Struct, kw_only=True):
+        level: str = "INFO"
+
+    class Model(msgspec.Struct, kw_only=True):
+        host: str = "localhost"
+        log: Log = msgspec.field(default_factory=Log)
+
+    def fake_urlopen(request: object, timeout: float) -> _FakeResponse:
+        return _FakeResponse(
+            b'{"host":"api.example.com","unknown":1,"log":{"level":"DEBUG","levle":"typo"}}'
+        )
+
+    monkeypatch.setattr("msgspec_settings.sources.api.urlopen", fake_urlopen)
+
+    src = APISource(api_url="https://example.test/config")
+    data = src.resolve(model=Model)
+
+    assert data == {"host": "api.example.com", "log": {"level": "DEBUG"}}
+    assert src.__unmapped_kwargs__ == {"unknown": 1, "log": {"levle": "typo"}}

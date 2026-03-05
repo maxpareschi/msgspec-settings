@@ -21,7 +21,7 @@ def test_simple_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_HOST", "envhost")
     monkeypatch.setenv("APP_PORT", "3000")
     src = EnvironSource(env_prefix="APP")
-    data = src.load(model=SimpleModel)
+    data = src.resolve(model=SimpleModel)
     assert data["host"] == "envhost"
     assert data["port"] == 3000
 
@@ -33,7 +33,7 @@ def test_nested_env_vars_with_default_separator(
     monkeypatch.setenv("APP_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("APP_LOG_FILE_PATH", "/tmp/app.log")
     src = EnvironSource(env_prefix="APP")
-    data = src.load(model=ServerModel)
+    data = src.resolve(model=ServerModel)
     assert data["log"]["level"] == "DEBUG"
     assert data["log"]["file_path"] == "/tmp/app.log"
 
@@ -44,7 +44,7 @@ def test_nested_env_vars_with_custom_separator(
     """Custom separator should be honored for nested keys."""
     monkeypatch.setenv("APP_LOG__LEVEL", "WARN")
     src = EnvironSource(env_prefix="APP", nested_separator="__")
-    data = src.load(model=ServerModel)
+    data = src.resolve(model=ServerModel)
     assert data["log"]["level"] == "WARN"
 
 
@@ -65,7 +65,7 @@ def test_invalid_nested_separator_raises(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setenv("APP_HOST", "envhost")
     src = EnvironSource(env_prefix="APP", nested_separator="")
     with pytest.raises(ValueError, match="nested_separator must be a non-empty"):
-        src.load(model=SimpleModel)
+        src.resolve(model=SimpleModel)
 
 
 def test_scalar_and_literal_coercion(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -74,10 +74,13 @@ def test_scalar_and_literal_coercion(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APP_VALUE", "2")
     monkeypatch.setenv("APP_ENABLED", "true")
 
-    assert EnvironSource(env_prefix="APP").load(model=LiteralModel)["level"] == "DEBUG"
-    assert EnvironSource(env_prefix="APP").load(model=IntLiteralModel)["value"] == 2
     assert (
-        EnvironSource(env_prefix="APP").load(model=BoolLiteralModel)["enabled"] is True
+        EnvironSource(env_prefix="APP").resolve(model=LiteralModel)["level"] == "DEBUG"
+    )
+    assert EnvironSource(env_prefix="APP").resolve(model=IntLiteralModel)["value"] == 2
+    assert (
+        EnvironSource(env_prefix="APP").resolve(model=BoolLiteralModel)["enabled"]
+        is True
     )
 
 
@@ -86,8 +89,8 @@ def test_union_and_optional_nested_support(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("APP_VALUE", "123")
     monkeypatch.setenv("APP_LOG_LEVEL", "DEBUG")
 
-    union_data = EnvironSource(env_prefix="APP").load(model=UnionModel)
-    optional_nested = EnvironSource(env_prefix="APP").load(model=OptionalNestedModel)
+    union_data = EnvironSource(env_prefix="APP").resolve(model=UnionModel)
+    optional_nested = EnvironSource(env_prefix="APP").resolve(model=OptionalNestedModel)
 
     assert union_data["value"] == 123
     assert optional_nested["log"]["level"] == "DEBUG"
@@ -96,5 +99,48 @@ def test_union_and_optional_nested_support(monkeypatch: pytest.MonkeyPatch) -> N
 def test_no_model_returns_flat_lowercase(monkeypatch: pytest.MonkeyPatch) -> None:
     """When no model is provided, returned keys should be lowercase flat names."""
     monkeypatch.setenv("APP_FOO", "bar")
-    data = EnvironSource(env_prefix="APP").load(model=None)
+    data = EnvironSource(env_prefix="APP").resolve(model=None)
     assert data["foo"] == "bar"
+
+
+def test_missing_env_prefix_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """EnvironSource should require a non-empty env_prefix."""
+    monkeypatch.setenv("HOST", "envhost")
+    src = EnvironSource()
+    with pytest.raises(ValueError, match="env_prefix must be a non-empty"):
+        src.resolve(model=SimpleModel)
+
+
+def test_unmatched_env_keys_are_stored_on_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unmapped env keys should be captured on source runtime state."""
+    monkeypatch.setenv("APP_HOST", "envhost")
+    monkeypatch.setenv("APP_HOTS", "typo")
+
+    src = EnvironSource(env_prefix="APP")
+    data = src.resolve(model=SimpleModel)
+
+    assert data["host"] == "envhost"
+    assert src.__unmapped_kwargs__ == {"HOTS": "typo"}
+
+
+def test_invalid_env_values_are_stored_on_source(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Recognized keys with failed coercion should be captured as unmapped."""
+    monkeypatch.setenv("APP_PORT", "not-int")
+
+    src = EnvironSource(env_prefix="APP")
+    data = src.resolve(model=SimpleModel)
+
+    assert data == {}
+    assert src.__unmapped_kwargs__ == {"PORT": "not-int"}
+
+
+def test_blank_env_prefix_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Whitespace env_prefix should be rejected."""
+    monkeypatch.setenv("APP_HOST", "envhost")
+    src = EnvironSource(env_prefix="   ")
+    with pytest.raises(ValueError, match="env_prefix must be a non-empty"):
+        src.resolve(model=SimpleModel)

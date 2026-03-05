@@ -13,6 +13,9 @@ def deep_merge_into(
     Args:
         destination: Mutable mapping mutated in place.
         update: Mapping patch to apply.
+
+    Returns:
+        ``None``.
     """
     for key, value in update.items():
         if isinstance(value, Mapping):
@@ -30,6 +33,9 @@ def set_nested(data: MutableMapping[str, Any], dotted_key: str, value: Any) -> N
         data: Target mapping.
         dotted_key: Path such as ``log.level``.
         value: Value to assign.
+
+    Returns:
+        ``None``.
 
     Raises:
         TypeError: If an intermediate element is not a mapping.

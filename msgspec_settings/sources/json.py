@@ -23,13 +23,11 @@ class JSONSource(DataSource):
     json_encoding: str = "utf-8"
 
     def load(self, model: type[msgspec.Struct] | None = None) -> Mapping[str, Any]:
-        """Decode JSON data into mapping form.
-
-        The ``model`` parameter is accepted for interface compatibility and is
-        not used in this source.
+        """Decode JSON configuration data.
 
         Args:
-            model: Optional model type requesting data.
+            model: Optional target model requesting data. Accepted for interface
+                compatibility.
 
         Returns:
             Parsed mapping data, or an empty mapping when both inline payload

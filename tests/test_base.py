@@ -85,6 +85,10 @@ def test_json_and_data_helpers_roundtrip() -> None:
 
     assert from_data.model_dump() == {"host": "a", "port": 1}
     assert from_json.model_dump() == {"host": "b", "port": 2}
+    assert from_data.__datasource_instances__ == ()
+    assert from_data.get_unmapped_payload() == {}
+    assert from_json.__datasource_instances__ == ()
+    assert from_json.get_unmapped_payload() == {}
 
 
 def test_model_json_schema_returns_json() -> None:
@@ -96,3 +100,75 @@ def test_model_json_schema_returns_json() -> None:
     schema_text = App.model_json_schema()
     assert schema_text.startswith("{")
     assert '"type"' in schema_text
+
+
+def test_model_stores_datasource_instances() -> None:
+    """Model instances should keep cloned runtime datasource instances."""
+
+    src = _StaticSource(payload={"host": "source"})
+
+    @datasources(src)
+    class App(DataModel):
+        host: str = "default"
+
+    model = App()
+
+    assert model.host == "source"
+    assert len(model.__datasource_instances__) == 1
+    assert model.__datasource_instances__[0] is not src
+
+
+def test_get_unmapped_payload_is_empty_without_datasources() -> None:
+    """Models without datasources should expose empty unmapped payload data."""
+
+    class App(DataModel):
+        host: str = "default"
+
+    model = App(host="x", hots="typo")
+
+    assert model.host == "x"
+    assert model.get_unmapped_payload() == {}
+
+
+def test_get_unmapped_payload_merges_source_order_and_is_cached() -> None:
+    """Method should deep-merge source unmapped values and cache."""
+
+    class UnmappedSource(DataSource):
+        payload: dict[str, Any] = {}
+        unmapped_payload: dict[str, Any] = {}
+
+        def load(
+            self,
+            model: type[DataModel] | None = None,
+        ) -> tuple[dict[str, Any], dict[str, Any]]:
+            return dict(self.payload), dict(self.unmapped_payload)
+
+    @datasources(
+        UnmappedSource(
+            payload={"host": "first"},
+            unmapped_payload={"debug": {"a": 1}, "shared": {"x": 1}},
+        ),
+        UnmappedSource(
+            payload={"host": "second"},
+            unmapped_payload={"debug": {"b": 2}, "shared": {"y": 2}},
+        ),
+    )
+    class App(DataModel):
+        host: str = "default"
+
+    model = App()
+    first = model.get_unmapped_payload()
+    second = model.get_unmapped_payload()
+
+    assert model.host == "second"
+    assert first == {"debug": {"a": 1, "b": 2}, "shared": {"x": 1, "y": 2}}
+    assert second == first
+    assert model.__unmapped_cache__ == first
+
+
+def test_reserved_runtime_attribute_name_raises() -> None:
+    """Declaring runtime-reserved names should fail."""
+    with pytest.raises(TypeError, match="reserved"):
+
+        class BadModel(DataModel):
+            __unmapped_cache__: dict[str, Any] = {}

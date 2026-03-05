@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import msgspec
 import pytest
 
 from msgspec_settings import JSONSource
@@ -62,3 +63,22 @@ def test_invalid_json_file_raises_runtime_error(tmp_path: Path) -> None:
     src = JSONSource(json_path=str(path))
     with pytest.raises(RuntimeError, match="Failed to parse JSON file"):
         src.load()
+
+
+def test_unmapped_json_keys_are_stored_on_source() -> None:
+    """Unknown JSON keys should be split out into source unmapped runtime state."""
+
+    class Log(msgspec.Struct, kw_only=True):
+        level: str = "INFO"
+
+    class Model(msgspec.Struct, kw_only=True):
+        host: str = "localhost"
+        log: Log = msgspec.field(default_factory=Log)
+
+    src = JSONSource(
+        json_data='{"host":"example.com","unknown":1,"log":{"level":"DEBUG","levle":"typo"}}'
+    )
+    data = src.resolve(model=Model)
+
+    assert data == {"host": "example.com", "log": {"level": "DEBUG"}}
+    assert src.__unmapped_kwargs__ == {"unknown": 1, "log": {"levle": "typo"}}

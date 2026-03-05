@@ -21,19 +21,18 @@ class YamlSource(DataSource):
     yaml_encoding: str = "utf-8"
 
     def load(self, model: type[msgspec.Struct] | None = None) -> Mapping[str, Any]:
-        """Read and parse the configured YAML file.
-
-        The ``model`` parameter is accepted for interface compatibility and is
-        not used in this source.
+        """Read and parse YAML configuration data.
 
         Args:
-            model: Optional model type requesting data.
+            model: Optional target model requesting data. Accepted for interface
+                compatibility.
 
         Returns:
-            Parsed mapping data, or an empty mapping when path is unset/missing.
+            Parsed mapping data. Returns an empty mapping when path is
+            unset/missing.
 
         Raises:
-            RuntimeError: If the file cannot be read or parsed.
+            RuntimeError: If file reading or YAML parsing fails.
         """
         if not self.yaml_path:
             return {}

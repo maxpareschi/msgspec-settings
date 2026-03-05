@@ -4,15 +4,15 @@
 }
 
 .pdoc {
-    --text: #bbb;
+    --text: #ccc;
     --muted: #888;
     --link: #58a6ff;
     --link-hover: #3989ff;
     --code: #353535;
     --active: #444;
 
-    --accent: #252525;
-    --accent2: #333;
+    --accent: #1b1b1b;
+    --accent2: #353535;
 
     --nav-hover: rgba(0, 0, 0, 0.1);
     --name: #77C1FF;

@@ -13,7 +13,7 @@ def test_dotenv_simple_file(tmp_path: Path) -> None:
     """Dotenv key/value pairs should map to typed fields."""
     env_file = tmp_path / ".env"
     env_file.write_text("APP_HOST=dotenvhost\nAPP_PORT=4000\n", encoding="utf-8")
-    data = DotEnvSource(dotenv_path=str(env_file), env_prefix="APP").load(
+    data = DotEnvSource(dotenv_path=str(env_file), env_prefix="APP").resolve(
         model=SimpleModel
     )
     assert data["host"] == "dotenvhost"
@@ -35,10 +35,10 @@ def test_dotenv_json_struct_with_flat_override_order_independent(
         encoding="utf-8",
     )
 
-    data1 = DotEnvSource(dotenv_path=str(ordered_1), env_prefix="APP").load(
+    data1 = DotEnvSource(dotenv_path=str(ordered_1), env_prefix="APP").resolve(
         model=ServerModel
     )
-    data2 = DotEnvSource(dotenv_path=str(ordered_2), env_prefix="APP").load(
+    data2 = DotEnvSource(dotenv_path=str(ordered_2), env_prefix="APP").resolve(
         model=ServerModel
     )
 
@@ -56,16 +56,58 @@ def test_dotenv_parsing_comments_and_quotes(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    data = DotEnvSource(dotenv_path=str(env_file), env_prefix="APP").load(model=None)
+    data = DotEnvSource(dotenv_path=str(env_file), env_prefix="APP").resolve(model=None)
     assert data["host"] == "dotenvhost"
     assert data["port"] == "4000"
     assert data["tag"] == "value#fragment"
 
 
+def test_unmatched_dotenv_keys_are_stored_on_source(tmp_path: Path) -> None:
+    """Unmapped dotenv keys should be captured on source runtime state."""
+    env_file = tmp_path / ".env"
+    env_file.write_text("APP_HOST=dotenvhost\nAPP_HOTS=typo\n", encoding="utf-8")
+
+    src = DotEnvSource(dotenv_path=str(env_file), env_prefix="APP")
+    data = src.resolve(model=SimpleModel)
+
+    assert data["host"] == "dotenvhost"
+    assert src.__unmapped_kwargs__ == {"HOTS": "typo"}
+
+
+def test_invalid_dotenv_values_are_stored_on_source(tmp_path: Path) -> None:
+    """Recognized dotenv keys with failed coercion should be unmapped."""
+    env_file = tmp_path / ".env"
+    env_file.write_text("APP_PORT=not-int\n", encoding="utf-8")
+
+    src = DotEnvSource(dotenv_path=str(env_file), env_prefix="APP")
+    data = src.resolve(model=SimpleModel)
+
+    assert data == {}
+    assert src.__unmapped_kwargs__ == {"PORT": "not-int"}
+
+
 def test_missing_dotenv_file_returns_empty(tmp_path: Path) -> None:
     """Missing dotenv file should return empty mapping."""
     src = DotEnvSource(dotenv_path=str(tmp_path / "missing.env"), env_prefix="APP")
-    assert src.load(model=SimpleModel) == {}
+    assert src.resolve(model=SimpleModel) == {}
+
+
+def test_missing_env_prefix_raises(tmp_path: Path) -> None:
+    """DotEnvSource should require a non-empty env_prefix."""
+    env_file = tmp_path / ".env"
+    env_file.write_text("HOST=dotenvhost\n", encoding="utf-8")
+    src = DotEnvSource(dotenv_path=str(env_file))
+    with pytest.raises(ValueError, match="env_prefix must be a non-empty"):
+        src.resolve(model=SimpleModel)
+
+
+def test_blank_env_prefix_raises(tmp_path: Path) -> None:
+    """Whitespace env_prefix should be rejected."""
+    env_file = tmp_path / ".env"
+    env_file.write_text("APP_HOST=dotenvhost\n", encoding="utf-8")
+    src = DotEnvSource(dotenv_path=str(env_file), env_prefix="   ")
+    with pytest.raises(ValueError, match="env_prefix must be a non-empty"):
+        src.resolve(model=SimpleModel)
 
 
 def test_empty_nested_separator_raises(tmp_path: Path) -> None:
@@ -78,7 +120,7 @@ def test_empty_nested_separator_raises(tmp_path: Path) -> None:
         nested_separator="",
     )
     with pytest.raises(ValueError, match="nested_separator must be a non-empty"):
-        src.load(model=SimpleModel)
+        src.resolve(model=SimpleModel)
 
 
 def test_env_and_dotenv_precedence_via_datasource_order(
@@ -124,4 +166,4 @@ def test_dotenv_os_error_raises_runtime_error(
     )
     src = DotEnvSource(dotenv_path=str(dotenv_path), env_prefix="APP")
     with pytest.raises(RuntimeError, match="Failed to read dotenv"):
-        src.load(model=SimpleModel)
+        src.resolve(model=SimpleModel)

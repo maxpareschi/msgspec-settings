@@ -28,17 +28,15 @@ class APISource(DataSource):
     timeout_seconds: float = 10.0
 
     def load(self, model: type[msgspec.Struct] | None = None) -> Mapping[str, Any]:
-        """Fetch and decode endpoint JSON into mapping form.
-
-        The ``model`` parameter is accepted for interface compatibility and is
-        not used in this source.
+        """Fetch and decode endpoint JSON payload.
 
         Args:
-            model: Optional model type requesting data.
+            model: Optional target model requesting data. Accepted for interface
+                compatibility.
 
         Returns:
-            Parsed mapping data, or an empty mapping when URL is unset or the
-            selected payload node is missing/non-mapping.
+            Parsed mapping payload, or an empty mapping when URL is unset or
+            selected payload is missing/non-mapping.
 
         Raises:
             ValueError: If only one of ``header_name``/``header_value`` is set.

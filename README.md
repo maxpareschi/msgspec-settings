@@ -98,6 +98,10 @@ With the example above:
 
 Rationale: this gives safe defaults in code, then progressive override points for deploy/runtime, while still keeping a final explicit override path in Python.
 
+Important:
+- `env_prefix` is mandatory for both `EnvironSource` and `DotEnvSource`.
+- Empty/blank prefixes raise `ValueError`.
+
 ## Field Helpers (`entry` and `group`)
 
 ### `entry(...)`
@@ -164,9 +168,10 @@ All built-ins are importable from both `msgspec_settings` and `msgspec_settings.
 ### `DotEnvSource`
 
 - parses dotenv syntax (`export`, quotes, inline comments)
-- optional prefix filtering via `env_prefix`
+- requires non-empty `env_prefix` (prefix scoping is mandatory)
 - nested keys are mapped with `nested_separator` (default `_`)
 - with a `model`, values are coerced to field types
+- recognized keys that fail coercion are captured in source `__unmapped_kwargs__`
 
 Example precedence inside one source:
 
@@ -180,6 +185,8 @@ APP_LOG_LEVEL=WARN
 ### `EnvironSource`
 
 Same mapping/coercion behavior as `DotEnvSource`, but reads from `os.environ`.
+`env_prefix` is mandatory, and failed coercions/unmatched keys are captured in
+source `__unmapped_kwargs__`.
 
 ```python
 EnvironSource(env_prefix="APP", nested_separator="__")
@@ -196,14 +203,15 @@ Key behavior:
 - nested struct fields also accept JSON on the top-level flag:
   - `--log '{"level":"DEBUG"}'`
 - explicit nested flags override keys from that JSON
-- unknown CLI args are collected in `cli_extra_args` instead of failing
+- unknown CLI args are stored on source runtime state in `__unmapped_kwargs__`
 - set `kebab_case=False` to use dotted long flags (e.g. `--log.level`)
+- CLI generates option aliases on the fly, but values are always mapped to canonical model field names
 
 ```python
 src = CliSource(cli_args=["--host", "api", "--unknown-flag"])
-data = src.load(model=AppConfig)
+data = src.resolve(model=AppConfig)
 print(data)  # {"host": "api"}
-print(src.cli_extra_args)  # ["--unknown-flag"]
+print(src.__unmapped_kwargs__)  # {"unknown-flag": True}
 ```
 
 ### `APISource`
@@ -220,7 +228,7 @@ src = APISource(
     header_value="Bearer <token>",
     root_node="data",
 )
-data = src.load()
+data = src.resolve()
 ```
 
 ## Custom Source Example
@@ -245,19 +253,25 @@ class ServiceConfig(DataModel):
     port: int = 8080
 ```
 
-Rationale: sources are deep-cloned per model instantiation, so source-local mutable state does not leak across `DataModel()` calls.
+Rationale: sources are deep-cloned per model instantiation, so source-local mutable state does not leak across `DataModel()` calls. `DataSource.resolve(...)` is the public finalized loader (reset + finalize); custom sources should override `load(...)`.
+
+## Limitations
+
+- Field aliasing (`msgspec.field(name=...)` or `entry(name=...)`) is not supported by source mapping. Use canonical field names in `DataModel`.
+- Do not shadow `DataModel`/`DataSource` method names with fields; this is user responsibility and can break runtime behavior.
 
 ## DataModel Helpers
 
 `DataModel` is a `msgspec.Struct` configured as keyword-only and with dict-like output support.
 
 Useful methods:
-- `from_data(data)` to create from a Python mapping
-- `from_json(json_str)` to create from JSON bytes/string
-- `model_dump()` for Python builtins
+- `from_data(data)` to create an instance from a Python mapping
+- `from_json(json_str)` to create an instance from JSON bytes/string
+- `model_dump()` to get the model converted in Python builtins
 - `model_dump_json(indent=...)` for JSON output
-- `model_json_schema(indent=...)` for schema export
-- `from_datasources(*sources, **kwargs)` to merge source payloads manually
+- `model_json_schema(indent=...)` for JSON Schema export
+- `get_datasources_payload(*sources, **kwargs)` to retrieve merged source payloads manually
+- `get_unmapped_payload()` to lazily merge source runtime `__unmapped_kwargs__` in source order
 
 Example:
 
@@ -270,7 +284,7 @@ print(AppConfig.model_json_schema(indent=2))
 ## API Summary
 
 - `DataModel`: typed model base class with validation/serialization helpers
-- `DataSource`: source base class (`load(model=...) -> dict[str, Any]`)
+- `DataSource`: source base class (`load(model=...) -> raw mapping`, `resolve(model=...) -> finalized mapping`)
 - `datasources(*sources)`: decorator that attaches ordered source templates
 - `entry(...)`: field helper with validation metadata and safe mutable defaults
 - `group(...)`: helper for grouped object/list/dict fields
@@ -282,4 +296,7 @@ Run tests:
 
 ```bash
 python -m pytest -q
+```
+```bash
+uv run pytest -q
 ```

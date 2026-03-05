@@ -21,19 +21,18 @@ class TomlSource(DataSource):
     toml_encoding: str = "utf-8"
 
     def load(self, model: type[msgspec.Struct] | None = None) -> Mapping[str, Any]:
-        """Read and parse the configured TOML file.
-
-        The ``model`` parameter is accepted for interface compatibility and is
-        not used in this source.
+        """Read and parse TOML configuration data.
 
         Args:
-            model: Optional model type requesting data.
+            model: Optional target model requesting data. Accepted for interface
+                compatibility.
 
         Returns:
-            Parsed mapping data, or an empty mapping when path is unset/missing.
+            Parsed mapping data. Returns an empty mapping when path is
+            unset/missing.
 
         Raises:
-            RuntimeError: If the file cannot be read or parsed.
+            RuntimeError: If file reading or TOML parsing fails.
         """
         if not self.toml_path:
             return {}
@@ -54,4 +53,5 @@ class TomlSource(DataSource):
 
         if not isinstance(data, Mapping):
             return {}
+
         return data

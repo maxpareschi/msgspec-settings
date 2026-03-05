@@ -1,6 +1,6 @@
 """CLI-backed data source implementation."""
 
-import contextvars
+from pathlib import Path
 import sys
 from typing import Any, Literal, get_args, get_origin
 
@@ -101,6 +101,93 @@ def _assign_short(long_flag: str, reserved: set[str], assigned: set[str]) -> str
     return None
 
 
+def _merge_unmapped_option(unmapped: dict[str, Any], key: str, value: Any) -> None:
+    """Store one parsed unknown option, preserving repeated occurrences.
+
+    Args:
+        unmapped: Target unmapped mapping being updated.
+        key: Parsed option key without leading dashes.
+        value: Parsed option value or boolean marker.
+
+    Returns:
+        ``None``.
+    """
+    existing = unmapped.get(key)
+    if existing is None:
+        unmapped[key] = value
+        return
+    if isinstance(existing, list):
+        existing.append(value)
+        return
+    unmapped[key] = [existing, value]
+
+
+def _parse_unmapped_cli_args(extra_args: list[str]) -> dict[str, Any]:
+    """Convert unmatched CLI tokens to a best-effort mapping.
+
+    Args:
+        extra_args: Unmatched tokens emitted by click parsing.
+
+    Returns:
+        Parsed mapping of unknown option names to values. Positional leftovers
+        are stored in ``"__positional__"``.
+    """
+    unmapped: dict[str, Any] = {}
+    positional: list[str] = []
+    idx = 0
+
+    while idx < len(extra_args):
+        token = extra_args[idx]
+
+        if token == "--":
+            positional.extend(extra_args[idx + 1 :])
+            break
+
+        if token.startswith("--") and token != "--":
+            option = token[2:]
+            if "=" in option:
+                key, value = option.split("=", 1)
+                _merge_unmapped_option(unmapped, key, value)
+                idx += 1
+                continue
+
+            value: Any = True
+            if idx + 1 < len(extra_args) and not extra_args[idx + 1].startswith("-"):
+                value = extra_args[idx + 1]
+                idx += 1
+            _merge_unmapped_option(unmapped, option, value)
+            idx += 1
+            continue
+
+        if token.startswith("-") and token != "-":
+            option = token[1:]
+            value = True
+            if idx + 1 < len(extra_args) and not extra_args[idx + 1].startswith("-"):
+                value = extra_args[idx + 1]
+                idx += 1
+            _merge_unmapped_option(unmapped, option, value)
+            idx += 1
+            continue
+
+        positional.append(token)
+        idx += 1
+
+    if positional:
+        unmapped["__positional__"] = positional
+
+    return unmapped
+
+
+def _resolve_command_name() -> str:
+    """Resolve the displayed command name from ``sys.argv[0]``.
+
+    Returns:
+        Basename of ``sys.argv[0]`` when available, otherwise ``"cli"``.
+    """
+    argv0 = Path(sys.argv[0]).name if sys.argv else ""
+    return argv0 or "cli"
+
+
 class CliSource(DataSource):
     """Load configuration values from command-line arguments.
 
@@ -114,26 +201,19 @@ class CliSource(DataSource):
     kebab_case: bool = True
     theme: str = "cargo-slim"
 
-    @property
-    def cli_extra_args(self) -> list[str]:
-        """Return uncaptured CLI args from the last ``load`` call.
-
-        Returns:
-            Unknown/extra arguments from the last parse.
-        """
-        extra_args_var = getattr(self, "__cli_extra_args_var__", None)
-        if extra_args_var is None:
-            return []
-        return list(extra_args_var.get())
-
-    def load(self, model: type[msgspec.Struct] | None = None) -> dict[str, Any]:
+    def load(
+        self,
+        model: type[msgspec.Struct] | None = None,
+    ) -> dict[str, Any] | tuple[dict[str, Any], dict[str, Any]]:
         """Parse command-line options into model-shaped nested data.
 
         Args:
             model: Target model used to generate options and coerce values.
 
         Returns:
-            Nested mapping of explicitly provided values.
+            Either:
+            - nested mapping of explicitly provided values, or
+            - tuple ``(mapped, unmapped)`` when unknown CLI args are present.
 
         Raises:
             TypeError: On generated option-name collisions.
@@ -160,6 +240,18 @@ class CliSource(DataSource):
         use_kebab = self.kebab_case
 
         def _register_decl(decl: str, dotted_path: str) -> None:
+            """Track one emitted option declaration and detect collisions.
+
+            Args:
+                decl: Option declaration token such as ``"--host"``.
+                dotted_path: Canonical model field path for ``decl``.
+
+            Returns:
+                ``None``.
+
+            Raises:
+                TypeError: If ``decl`` is already associated with another path.
+            """
             existing_path = decl_to_path.get(decl)
             if existing_path is not None and existing_path != dotted_path:
                 raise TypeError(
@@ -316,7 +408,7 @@ class CliSource(DataSource):
                 )
             )
 
-        command_name = getattr(model, "__name__", "cli").lower()
+        command_name = _resolve_command_name()
 
         epilog_parts: list[str] = []
         if bool_neg_map:
@@ -344,13 +436,7 @@ class CliSource(DataSource):
         except click.exceptions.Exit as exc:
             raise SystemExit(getattr(exc, "code", 0)) from None
 
-        extra_args_var = getattr(self, "__cli_extra_args_var__", None)
-        if extra_args_var is None:
-            extra_args_var = contextvars.ContextVar(
-                f"cli_extra_args_{id(self)}", default=()
-            )
-            self.__cli_extra_args_var__ = extra_args_var
-        extra_args_var.set(tuple(ctx.args))
+        extra_args = list(ctx.args)
 
         raw_values: dict[str, Any] = ctx.params
         result: dict[str, Any] = {}
@@ -398,4 +484,6 @@ class CliSource(DataSource):
 
             set_nested(result, dotted_path, value)
 
+        if extra_args:
+            return result, _parse_unmapped_cli_args(extra_args)
         return result
