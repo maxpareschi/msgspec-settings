@@ -47,10 +47,12 @@ APP_LOG_LEVEL=DEBUG
 
 ```python
 from msgspec_settings import (
+    APISource,
     CliSource,
     DataModel,
     DotEnvSource,
     EnvironSource,
+    JSONSource,
     TomlSource,
     datasources,
     entry,
@@ -152,6 +154,13 @@ All built-ins are importable from both `msgspec_settings` and `msgspec_settings.
 - if path is unset or missing, they return `{}` (treated as "source absent")
 - parse/read failures raise `RuntimeError` with file context
 
+### `JSONSource`
+
+- decodes inline JSON (`json_data`) or loads JSON from `json_path`
+- if both are set, `json_data` takes precedence
+- if path is unset/missing, returns `{}`
+- parse/read failures raise `RuntimeError` with context
+
 ### `DotEnvSource`
 
 - parses dotenv syntax (`export`, quotes, inline comments)
@@ -195,6 +204,23 @@ src = CliSource(cli_args=["--host", "api", "--unknown-flag"])
 data = src.load(model=AppConfig)
 print(data)  # {"host": "api"}
 print(src.cli_extra_args)  # ["--unknown-flag"]
+```
+
+### `APISource`
+
+- performs an HTTP `GET` request against `api_url`
+- optional auth header via `header_name` + `header_value`
+- optional `root_node` to unwrap wrapped payloads (for example `{"data": {...}}`)
+- request or parse failures raise `RuntimeError` with endpoint context
+
+```python
+src = APISource(
+    api_url="https://example.com/config",
+    header_name="Authorization",
+    header_value="Bearer <token>",
+    root_node="data",
+)
+data = src.load()
 ```
 
 ## Custom Source Example
@@ -248,7 +274,7 @@ print(AppConfig.model_json_schema(indent=2))
 - `datasources(*sources)`: decorator that attaches ordered source templates
 - `entry(...)`: field helper with validation metadata and safe mutable defaults
 - `group(...)`: helper for grouped object/list/dict fields
-- built-ins: `TomlSource`, `YamlSource`, `DotEnvSource`, `EnvironSource`, `CliSource`
+- built-ins: `TomlSource`, `YamlSource`, `JSONSource`, `DotEnvSource`, `EnvironSource`, `CliSource`, `APISource`
 
 ## Development
 

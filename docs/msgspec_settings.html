@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="generator" content="pdoc 16.0.0"/>
     <title>msgspec_settings API documentation</title>
-            <link rel="icon" href="assets/msgspec-settings-logo.svg"/>
+            <link rel="icon" href="docs/assets/msgspec-settings-logo.svg"/>
 
     <style>/*! * Bootstrap Reboot v5.0.0 (https://getbootstrap.com/) * Copyright 2011-2021 The Bootstrap Authors * Copyright 2011-2021 Twitter, Inc. * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE) * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md) */*,::after,::before{box-sizing:border-box}@media (prefers-reduced-motion:no-preference){:root{scroll-behavior:smooth}}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#fff;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}hr{margin:1rem 0;color:inherit;background-color:currentColor;border:0;opacity:.25}hr:not([size]){height:1px}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem;font-weight:500;line-height:1.2}h1{font-size:calc(1.375rem + 1.5vw)}@media (min-width:1200px){h1{font-size:2.5rem}}h2{font-size:calc(1.325rem + .9vw)}@media (min-width:1200px){h2{font-size:2rem}}h3{font-size:calc(1.3rem + .6vw)}@media (min-width:1200px){h3{font-size:1.75rem}}h4{font-size:calc(1.275rem + .3vw)}@media (min-width:1200px){h4{font-size:1.5rem}}h5{font-size:1.25rem}h6{font-size:1rem}p{margin-top:0;margin-bottom:1rem}abbr[data-bs-original-title],abbr[title]{-webkit-text-decoration:underline dotted;text-decoration:underline dotted;cursor:help;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}address{margin-bottom:1rem;font-style:normal;line-height:inherit}ol,ul{padding-left:2rem}dl,ol,ul{margin-top:0;margin-bottom:1rem}ol ol,ol ul,ul ol,ul ul{margin-bottom:0}dt{font-weight:700}dd{margin-bottom:.5rem;margin-left:0}blockquote{margin:0 0 1rem}b,strong{font-weight:bolder}small{font-size:.875em}mark{padding:.2em;background-color:#fcf8e3}sub,sup{position:relative;font-size:.75em;line-height:0;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}a{color:#0d6efd;text-decoration:underline}a:hover{color:#0a58ca}a:not([href]):not([class]),a:not([href]):not([class]):hover{color:inherit;text-decoration:none}code,kbd,pre,samp{font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:1em;direction:ltr;unicode-bidi:bidi-override}pre{display:block;margin-top:0;margin-bottom:1rem;overflow:auto;font-size:.875em}pre code{font-size:inherit;color:inherit;word-break:normal}code{font-size:.875em;color:#d63384;word-wrap:break-word}a>code{color:inherit}kbd{padding:.2rem .4rem;font-size:.875em;color:#fff;background-color:#212529;border-radius:.2rem}kbd kbd{padding:0;font-size:1em;font-weight:700}figure{margin:0 0 1rem}img,svg{vertical-align:middle}table{caption-side:bottom;border-collapse:collapse}caption{padding-top:.5rem;padding-bottom:.5rem;color:#6c757d;text-align:left}th{text-align:inherit;text-align:-webkit-match-parent}tbody,td,tfoot,th,thead,tr{border-color:inherit;border-style:solid;border-width:0}label{display:inline-block}button{border-radius:0}button:focus:not(:focus-visible){outline:0}button,input,optgroup,select,textarea{margin:0;font-family:inherit;font-size:inherit;line-height:inherit}button,select{text-transform:none}[role=button]{cursor:pointer}select{word-wrap:normal}select:disabled{opacity:1}[list]::-webkit-calendar-picker-indicator{display:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]:not(:disabled),[type=reset]:not(:disabled),[type=submit]:not(:disabled),button:not(:disabled){cursor:pointer}::-moz-focus-inner{padding:0;border-style:none}textarea{resize:vertical}fieldset{min-width:0;padding:0;margin:0;border:0}legend{float:left;width:100%;padding:0;margin-bottom:.5rem;font-size:calc(1.275rem + .3vw);line-height:inherit}@media (min-width:1200px){legend{font-size:1.5rem}}legend+*{clear:left}::-webkit-datetime-edit-day-field,::-webkit-datetime-edit-fields-wrapper,::-webkit-datetime-edit-hour-field,::-webkit-datetime-edit-minute,::-webkit-datetime-edit-month-field,::-webkit-datetime-edit-text,::-webkit-datetime-edit-year-field{padding:0}::-webkit-inner-spin-button{height:auto}[type=search]{outline-offset:-2px;-webkit-appearance:textfield}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-color-swatch-wrapper{padding:0}::file-selector-button{font:inherit}::-webkit-file-upload-button{font:inherit;-webkit-appearance:button}output{display:inline-block}iframe{border:0}summary{display:list-item;cursor:pointer}progress{vertical-align:baseline}[hidden]{display:none!important}</style>
     <style>/*! syntax-highlighting.css */pre{line-height:125%;}span.linenos{color:inherit; background-color:transparent; padding-left:5px; padding-right:20px;}.pdoc-code .hll{background-color:#49483e}.pdoc-code{background:#272822; color:#f8f8f2}.pdoc-code .c{color:#75715e}.pdoc-code .err{color:#960050; background-color:#1e0010}.pdoc-code .esc{color:#f8f8f2}.pdoc-code .g{color:#f8f8f2}.pdoc-code .k{color:#66d9ef}.pdoc-code .l{color:#ae81ff}.pdoc-code .n{color:#f8f8f2}.pdoc-code .o{color:#f92672}.pdoc-code .x{color:#f8f8f2}.pdoc-code .p{color:#f8f8f2}.pdoc-code .ch{color:#75715e}.pdoc-code .cm{color:#75715e}.pdoc-code .cp{color:#75715e}.pdoc-code .cpf{color:#75715e}.pdoc-code .c1{color:#75715e}.pdoc-code .cs{color:#75715e}.pdoc-code .gd{color:#f92672}.pdoc-code .ge{color:#f8f8f2; font-style:italic}.pdoc-code .gr{color:#f8f8f2}.pdoc-code .gh{color:#f8f8f2}.pdoc-code .gi{color:#a6e22e}.pdoc-code .go{color:#66d9ef}.pdoc-code .gp{color:#f92672; font-weight:bold}.pdoc-code .gs{color:#f8f8f2; font-weight:bold}.pdoc-code .gu{color:#75715e}.pdoc-code .gt{color:#f8f8f2}.pdoc-code .kc{color:#66d9ef}.pdoc-code .kd{color:#66d9ef}.pdoc-code .kn{color:#f92672}.pdoc-code .kp{color:#66d9ef}.pdoc-code .kr{color:#66d9ef}.pdoc-code .kt{color:#66d9ef}.pdoc-code .ld{color:#e6db74}.pdoc-code .m{color:#ae81ff}.pdoc-code .s{color:#e6db74}.pdoc-code .na{color:#a6e22e}.pdoc-code .nb{color:#f8f8f2}.pdoc-code .nc{color:#a6e22e}.pdoc-code .no{color:#66d9ef}.pdoc-code .nd{color:#a6e22e}.pdoc-code .ni{color:#f8f8f2}.pdoc-code .ne{color:#a6e22e}.pdoc-code .nf{color:#a6e22e}.pdoc-code .nl{color:#f8f8f2}.pdoc-code .nn{color:#f8f8f2}.pdoc-code .nx{color:#a6e22e}.pdoc-code .py{color:#f8f8f2}.pdoc-code .nt{color:#f92672}.pdoc-code .nv{color:#f8f8f2}.pdoc-code .ow{color:#f92672}.pdoc-code .w{color:#f8f8f2}.pdoc-code .mb{color:#ae81ff}.pdoc-code .mf{color:#ae81ff}.pdoc-code .mh{color:#ae81ff}.pdoc-code .mi{color:#ae81ff}.pdoc-code .mo{color:#ae81ff}.pdoc-code .sa{color:#e6db74}.pdoc-code .sb{color:#e6db74}.pdoc-code .sc{color:#e6db74}.pdoc-code .dl{color:#e6db74}.pdoc-code .sd{color:#e6db74}.pdoc-code .s2{color:#e6db74}.pdoc-code .se{color:#ae81ff}.pdoc-code .sh{color:#e6db74}.pdoc-code .si{color:#e6db74}.pdoc-code .sx{color:#e6db74}.pdoc-code .sr{color:#e6db74}.pdoc-code .s1{color:#e6db74}.pdoc-code .ss{color:#e6db74}.pdoc-code .bp{color:#f8f8f2}.pdoc-code .fm{color:#a6e22e}.pdoc-code .vc{color:#f8f8f2}.pdoc-code .vg{color:#f8f8f2}.pdoc-code .vi{color:#f8f8f2}.pdoc-code .vm{color:#f8f8f2}</style>
@@ -18,7 +18,7 @@
         <label id="navtoggle" for="togglestate" class="pdoc-button"><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke-linecap='round' stroke="currentColor" stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/></svg></label>
         <input id="togglestate" type="checkbox" aria-hidden="true" tabindex="-1">
         <div>
-            <img src="assets/msgspec-settings-logo.svg" class="logo" alt="project logo"/>
+            <img src="docs/assets/msgspec-settings-logo.svg" class="logo" alt="project logo"/>
 
 
 
@@ -75,6 +75,33 @@
             </li>
             <li>
                     <a class="function" href="#group">group</a>
+            </li>
+            <li>
+                    <a class="class" href="#APISource">APISource</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#APISource.__init__">APISource</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#APISource.api_url">api_url</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#APISource.header_name">header_name</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#APISource.header_value">header_value</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#APISource.root_node">root_node</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#APISource.timeout_seconds">timeout_seconds</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#APISource.load">load</a>
+                        </li>
+                </ul>
+
             </li>
             <li>
                     <a class="class" href="#CliSource">CliSource</a>
@@ -143,6 +170,27 @@
 
             </li>
             <li>
+                    <a class="class" href="#JSONSource">JSONSource</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#JSONSource.__init__">JSONSource</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#JSONSource.json_data">json_data</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#JSONSource.json_path">json_path</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#JSONSource.json_encoding">json_encoding</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#JSONSource.load">load</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
                     <a class="class" href="#TomlSource">TomlSource</a>
                             <ul class="memberlist">
                         <li>
@@ -201,20 +249,30 @@ msgspec_settings    </h1>
 
                         <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataModel</span><span class="p">,</span> <span class="n">DataSource</span><span class="p">,</span> <span class="n">datasources</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.fields</span><span class="w"> </span><span class="kn">import</span> <span class="n">entry</span><span class="p">,</span> <span class="n">group</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.sources</span><span class="w"> </span><span class="kn">import</span> <span class="n">CliSource</span><span class="p">,</span> <span class="n">DotEnvSource</span><span class="p">,</span> <span class="n">EnvironSource</span><span class="p">,</span> <span class="n">TomlSource</span><span class="p">,</span> <span class="n">YamlSource</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>    <span class="s2">&quot;DataModel&quot;</span><span class="p">,</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>    <span class="s2">&quot;DataSource&quot;</span><span class="p">,</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>    <span class="s2">&quot;datasources&quot;</span><span class="p">,</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>    <span class="s2">&quot;entry&quot;</span><span class="p">,</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>    <span class="s2">&quot;group&quot;</span><span class="p">,</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>    <span class="s2">&quot;CliSource&quot;</span><span class="p">,</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>    <span class="s2">&quot;DotEnvSource&quot;</span><span class="p">,</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>    <span class="s2">&quot;EnvironSource&quot;</span><span class="p">,</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>    <span class="s2">&quot;TomlSource&quot;</span><span class="p">,</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>    <span class="s2">&quot;YamlSource&quot;</span><span class="p">,</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="p">)</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.sources</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a>    <span class="n">APISource</span><span class="p">,</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a>    <span class="n">CliSource</span><span class="p">,</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>    <span class="n">DotEnvSource</span><span class="p">,</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>    <span class="n">EnvironSource</span><span class="p">,</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>    <span class="n">JSONSource</span><span class="p">,</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>    <span class="n">TomlSource</span><span class="p">,</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>    <span class="n">YamlSource</span><span class="p">,</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="p">)</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>    <span class="s2">&quot;DataModel&quot;</span><span class="p">,</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>    <span class="s2">&quot;DataSource&quot;</span><span class="p">,</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>    <span class="s2">&quot;datasources&quot;</span><span class="p">,</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>    <span class="s2">&quot;entry&quot;</span><span class="p">,</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>    <span class="s2">&quot;group&quot;</span><span class="p">,</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>    <span class="s2">&quot;APISource&quot;</span><span class="p">,</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="s2">&quot;CliSource&quot;</span><span class="p">,</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>    <span class="s2">&quot;DotEnvSource&quot;</span><span class="p">,</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>    <span class="s2">&quot;EnvironSource&quot;</span><span class="p">,</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>    <span class="s2">&quot;JSONSource&quot;</span><span class="p">,</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>    <span class="s2">&quot;TomlSource&quot;</span><span class="p">,</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>    <span class="s2">&quot;YamlSource&quot;</span><span class="p">,</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="p">)</span>
 </span></pre></div>
 
 
@@ -989,6 +1047,288 @@ factories to avoid shared state across instances.</p>
 </div>
 
 
+                </section>
+                <section id="APISource">
+                            <input id="APISource-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">APISource</span><wbr>(<span class="base"><a href="#DataSource">msgspec_settings.DataSource</a></span>):
+
+                <label class="view-source-button" for="APISource-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#APISource"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="APISource-14"><a href="#APISource-14"><span class="linenos">14</span></a><span class="k">class</span><span class="w"> </span><span class="nc">APISource</span><span class="p">(</span><span class="n">DataSource</span><span class="p">):</span>
+</span><span id="APISource-15"><a href="#APISource-15"><span class="linenos">15</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Load configuration data by calling an HTTP JSON endpoint.</span>
+</span><span id="APISource-16"><a href="#APISource-16"><span class="linenos">16</span></a>
+</span><span id="APISource-17"><a href="#APISource-17"><span class="linenos">17</span></a><span class="sd">    Attributes:</span>
+</span><span id="APISource-18"><a href="#APISource-18"><span class="linenos">18</span></a><span class="sd">        api_url: Endpoint URL used for the GET request.</span>
+</span><span id="APISource-19"><a href="#APISource-19"><span class="linenos">19</span></a><span class="sd">        header_name: Optional request header name (for auth, etc.).</span>
+</span><span id="APISource-20"><a href="#APISource-20"><span class="linenos">20</span></a><span class="sd">        header_value: Optional request header value.</span>
+</span><span id="APISource-21"><a href="#APISource-21"><span class="linenos">21</span></a><span class="sd">        root_node: Optional top-level JSON key to unwrap from response payload.</span>
+</span><span id="APISource-22"><a href="#APISource-22"><span class="linenos">22</span></a><span class="sd">        timeout_seconds: Request timeout in seconds.</span>
+</span><span id="APISource-23"><a href="#APISource-23"><span class="linenos">23</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="APISource-24"><a href="#APISource-24"><span class="linenos">24</span></a>
+</span><span id="APISource-25"><a href="#APISource-25"><span class="linenos">25</span></a>    <span class="n">api_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="APISource-26"><a href="#APISource-26"><span class="linenos">26</span></a>    <span class="n">header_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="APISource-27"><a href="#APISource-27"><span class="linenos">27</span></a>    <span class="n">header_value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="APISource-28"><a href="#APISource-28"><span class="linenos">28</span></a>    <span class="n">root_node</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="APISource-29"><a href="#APISource-29"><span class="linenos">29</span></a>    <span class="n">timeout_seconds</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span>
+</span><span id="APISource-30"><a href="#APISource-30"><span class="linenos">30</span></a>
+</span><span id="APISource-31"><a href="#APISource-31"><span class="linenos">31</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">msgspec</span><span class="o">.</span><span class="n">Struct</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="APISource-32"><a href="#APISource-32"><span class="linenos">32</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Fetch and decode endpoint JSON into mapping form.</span>
+</span><span id="APISource-33"><a href="#APISource-33"><span class="linenos">33</span></a>
+</span><span id="APISource-34"><a href="#APISource-34"><span class="linenos">34</span></a><span class="sd">        The ``model`` parameter is accepted for interface compatibility and is</span>
+</span><span id="APISource-35"><a href="#APISource-35"><span class="linenos">35</span></a><span class="sd">        not used in this source.</span>
+</span><span id="APISource-36"><a href="#APISource-36"><span class="linenos">36</span></a>
+</span><span id="APISource-37"><a href="#APISource-37"><span class="linenos">37</span></a><span class="sd">        Args:</span>
+</span><span id="APISource-38"><a href="#APISource-38"><span class="linenos">38</span></a><span class="sd">            model: Optional model type requesting data.</span>
+</span><span id="APISource-39"><a href="#APISource-39"><span class="linenos">39</span></a>
+</span><span id="APISource-40"><a href="#APISource-40"><span class="linenos">40</span></a><span class="sd">        Returns:</span>
+</span><span id="APISource-41"><a href="#APISource-41"><span class="linenos">41</span></a><span class="sd">            Parsed mapping data, or an empty mapping when URL is unset or the</span>
+</span><span id="APISource-42"><a href="#APISource-42"><span class="linenos">42</span></a><span class="sd">            selected payload node is missing/non-mapping.</span>
+</span><span id="APISource-43"><a href="#APISource-43"><span class="linenos">43</span></a>
+</span><span id="APISource-44"><a href="#APISource-44"><span class="linenos">44</span></a><span class="sd">        Raises:</span>
+</span><span id="APISource-45"><a href="#APISource-45"><span class="linenos">45</span></a><span class="sd">            ValueError: If only one of ``header_name``/``header_value`` is set.</span>
+</span><span id="APISource-46"><a href="#APISource-46"><span class="linenos">46</span></a><span class="sd">            RuntimeError: If request fails or response JSON is invalid.</span>
+</span><span id="APISource-47"><a href="#APISource-47"><span class="linenos">47</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="APISource-48"><a href="#APISource-48"><span class="linenos">48</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="p">:</span>
+</span><span id="APISource-49"><a href="#APISource-49"><span class="linenos">49</span></a>            <span class="k">return</span> <span class="p">{}</span>
+</span><span id="APISource-50"><a href="#APISource-50"><span class="linenos">50</span></a>
+</span><span id="APISource-51"><a href="#APISource-51"><span class="linenos">51</span></a>        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">header_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">header_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="APISource-52"><a href="#APISource-52"><span class="linenos">52</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;header_name and header_value must be set together&quot;</span><span class="p">)</span>
+</span><span id="APISource-53"><a href="#APISource-53"><span class="linenos">53</span></a>
+</span><span id="APISource-54"><a href="#APISource-54"><span class="linenos">54</span></a>        <span class="n">headers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="APISource-55"><a href="#APISource-55"><span class="linenos">55</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">header_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">header_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="APISource-56"><a href="#APISource-56"><span class="linenos">56</span></a>            <span class="n">headers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">header_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">header_value</span>
+</span><span id="APISource-57"><a href="#APISource-57"><span class="linenos">57</span></a>
+</span><span id="APISource-58"><a href="#APISource-58"><span class="linenos">58</span></a>        <span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;GET&quot;</span><span class="p">)</span>
+</span><span id="APISource-59"><a href="#APISource-59"><span class="linenos">59</span></a>
+</span><span id="APISource-60"><a href="#APISource-60"><span class="linenos">60</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="APISource-61"><a href="#APISource-61"><span class="linenos">61</span></a>            <span class="k">with</span> <span class="n">urlopen</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout_seconds</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+</span><span id="APISource-62"><a href="#APISource-62"><span class="linenos">62</span></a>                <span class="n">raw_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span id="APISource-63"><a href="#APISource-63"><span class="linenos">63</span></a>        <span class="k">except</span> <span class="p">(</span><span class="n">HTTPError</span><span class="p">,</span> <span class="n">URLError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="APISource-64"><a href="#APISource-64"><span class="linenos">64</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to fetch API endpoint: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+</span><span id="APISource-65"><a href="#APISource-65"><span class="linenos">65</span></a>
+</span><span id="APISource-66"><a href="#APISource-66"><span class="linenos">66</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="APISource-67"><a href="#APISource-67"><span class="linenos">67</span></a>            <span class="n">data</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">msgspec</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">raw_data</span><span class="p">)</span>
+</span><span id="APISource-68"><a href="#APISource-68"><span class="linenos">68</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="APISource-69"><a href="#APISource-69"><span class="linenos">69</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span id="APISource-70"><a href="#APISource-70"><span class="linenos">70</span></a>                <span class="sa">f</span><span class="s2">&quot;Failed to parse API response JSON: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="APISource-71"><a href="#APISource-71"><span class="linenos">71</span></a>            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+</span><span id="APISource-72"><a href="#APISource-72"><span class="linenos">72</span></a>
+</span><span id="APISource-73"><a href="#APISource-73"><span class="linenos">73</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_node</span><span class="p">:</span>
+</span><span id="APISource-74"><a href="#APISource-74"><span class="linenos">74</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+</span><span id="APISource-75"><a href="#APISource-75"><span class="linenos">75</span></a>                <span class="k">return</span> <span class="p">{}</span>
+</span><span id="APISource-76"><a href="#APISource-76"><span class="linenos">76</span></a>            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_node</span><span class="p">)</span>
+</span><span id="APISource-77"><a href="#APISource-77"><span class="linenos">77</span></a>
+</span><span id="APISource-78"><a href="#APISource-78"><span class="linenos">78</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+</span><span id="APISource-79"><a href="#APISource-79"><span class="linenos">79</span></a>            <span class="k">return</span> <span class="p">{}</span>
+</span><span id="APISource-80"><a href="#APISource-80"><span class="linenos">80</span></a>        <span class="k">return</span> <span class="n">data</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Load configuration data by calling an HTTP JSON endpoint.</p>
+
+<p>Attributes:
+    api_url: Endpoint URL used for the GET request.
+    header_name: Optional request header name (for auth, etc.).
+    header_value: Optional request header value.
+    root_node: Optional top-level JSON key to unwrap from response payload.
+    timeout_seconds: Request timeout in seconds.</p>
+</div>
+
+
+                            <div id="APISource.__init__" class="classattr">
+                                        <input id="APISource.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="name">APISource</span><span class="signature pdoc-code condensed">(<span class="param"><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span>, </span><span class="param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></span>)</span>
+
+                <label class="view-source-button" for="APISource.__init__-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#APISource.__init__"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="APISource.__init__-87"><a href="#APISource.__init__-87"><span class="linenos"> 87</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;DataModel&quot;</span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DataModel&quot;</span><span class="p">:</span>
+</span><span id="APISource.__init__-88"><a href="#APISource.__init__-88"><span class="linenos"> 88</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate a DataModel from merged datasource data and explicit kwargs.</span>
+</span><span id="APISource.__init__-89"><a href="#APISource.__init__-89"><span class="linenos"> 89</span></a>
+</span><span id="APISource.__init__-90"><a href="#APISource.__init__-90"><span class="linenos"> 90</span></a><span class="sd">        Args:</span>
+</span><span id="APISource.__init__-91"><a href="#APISource.__init__-91"><span class="linenos"> 91</span></a><span class="sd">            *args: Positional arguments (not supported).</span>
+</span><span id="APISource.__init__-92"><a href="#APISource.__init__-92"><span class="linenos"> 92</span></a><span class="sd">            **kwargs: Explicit field overrides.</span>
+</span><span id="APISource.__init__-93"><a href="#APISource.__init__-93"><span class="linenos"> 93</span></a>
+</span><span id="APISource.__init__-94"><a href="#APISource.__init__-94"><span class="linenos"> 94</span></a><span class="sd">        Returns:</span>
+</span><span id="APISource.__init__-95"><a href="#APISource.__init__-95"><span class="linenos"> 95</span></a><span class="sd">            A validated DataModel instance.</span>
+</span><span id="APISource.__init__-96"><a href="#APISource.__init__-96"><span class="linenos"> 96</span></a>
+</span><span id="APISource.__init__-97"><a href="#APISource.__init__-97"><span class="linenos"> 97</span></a><span class="sd">        Raises:</span>
+</span><span id="APISource.__init__-98"><a href="#APISource.__init__-98"><span class="linenos"> 98</span></a><span class="sd">            TypeError: If positional arguments are provided.</span>
+</span><span id="APISource.__init__-99"><a href="#APISource.__init__-99"><span class="linenos"> 99</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="APISource.__init__-100"><a href="#APISource.__init__-100"><span class="linenos">100</span></a>        <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
+</span><span id="APISource.__init__-101"><a href="#APISource.__init__-101"><span class="linenos">101</span></a>            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+</span><span id="APISource.__init__-102"><a href="#APISource.__init__-102"><span class="linenos">102</span></a>                <span class="sa">f</span><span class="s2">&quot;Class </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not support positional arguments. &quot;</span>
+</span><span id="APISource.__init__-103"><a href="#APISource.__init__-103"><span class="linenos">103</span></a>                <span class="s2">&quot;Use keyword arguments instead.&quot;</span>
+</span><span id="APISource.__init__-104"><a href="#APISource.__init__-104"><span class="linenos">104</span></a>            <span class="p">)</span>
+</span><span id="APISource.__init__-105"><a href="#APISource.__init__-105"><span class="linenos">105</span></a>
+</span><span id="APISource.__init__-106"><a href="#APISource.__init__-106"><span class="linenos">106</span></a>        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__datasources__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">DataSource</span><span class="p">):</span>
+</span><span id="APISource.__init__-107"><a href="#APISource.__init__-107"><span class="linenos">107</span></a>            <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_datasources</span><span class="p">(</span><span class="o">*</span><span class="bp">cls</span><span class="o">.</span><span class="n">__datasources__</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span id="APISource.__init__-108"><a href="#APISource.__init__-108"><span class="linenos">108</span></a>
+</span><span id="APISource.__init__-109"><a href="#APISource.__init__-109"><span class="linenos">109</span></a>        <span class="k">return</span> <span class="n">msgspec</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="bp">cls</span><span class="p">,</span> <span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">str_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Instantiate a DataModel from merged datasource data and explicit kwargs.</p>
+
+<p>Args:
+    *args: Positional arguments (not supported).
+    **kwargs: Explicit field overrides.</p>
+
+<p>Returns:
+    A validated DataModel instance.</p>
+
+<p>Raises:
+    TypeError: If positional arguments are provided.</p>
+</div>
+
+
+                            </div>
+                            <div id="APISource.api_url" class="classattr">
+                                <div class="attr variable">
+            <span class="name">api_url</span><span class="annotation">: str | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#APISource.api_url"></a>
+    
+    
+
+                            </div>
+                            <div id="APISource.header_name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">header_name</span><span class="annotation">: str | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#APISource.header_name"></a>
+    
+    
+
+                            </div>
+                            <div id="APISource.header_value" class="classattr">
+                                <div class="attr variable">
+            <span class="name">header_value</span><span class="annotation">: str | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#APISource.header_value"></a>
+    
+    
+
+                            </div>
+                            <div id="APISource.root_node" class="classattr">
+                                <div class="attr variable">
+            <span class="name">root_node</span><span class="annotation">: str | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#APISource.root_node"></a>
+    
+    
+
+                            </div>
+                            <div id="APISource.timeout_seconds" class="classattr">
+                                <div class="attr variable">
+            <span class="name">timeout_seconds</span><span class="annotation">: float</span>
+
+        
+    </div>
+    <a class="headerlink" href="#APISource.timeout_seconds"></a>
+    
+    
+
+                            </div>
+                            <div id="APISource.load" class="classattr">
+                                        <input id="APISource.load-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">load</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">msgspec</span><span class="o">.</span><span class="n">Struct</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Any</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="APISource.load-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#APISource.load"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="APISource.load-31"><a href="#APISource.load-31"><span class="linenos">31</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">msgspec</span><span class="o">.</span><span class="n">Struct</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="APISource.load-32"><a href="#APISource.load-32"><span class="linenos">32</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Fetch and decode endpoint JSON into mapping form.</span>
+</span><span id="APISource.load-33"><a href="#APISource.load-33"><span class="linenos">33</span></a>
+</span><span id="APISource.load-34"><a href="#APISource.load-34"><span class="linenos">34</span></a><span class="sd">        The ``model`` parameter is accepted for interface compatibility and is</span>
+</span><span id="APISource.load-35"><a href="#APISource.load-35"><span class="linenos">35</span></a><span class="sd">        not used in this source.</span>
+</span><span id="APISource.load-36"><a href="#APISource.load-36"><span class="linenos">36</span></a>
+</span><span id="APISource.load-37"><a href="#APISource.load-37"><span class="linenos">37</span></a><span class="sd">        Args:</span>
+</span><span id="APISource.load-38"><a href="#APISource.load-38"><span class="linenos">38</span></a><span class="sd">            model: Optional model type requesting data.</span>
+</span><span id="APISource.load-39"><a href="#APISource.load-39"><span class="linenos">39</span></a>
+</span><span id="APISource.load-40"><a href="#APISource.load-40"><span class="linenos">40</span></a><span class="sd">        Returns:</span>
+</span><span id="APISource.load-41"><a href="#APISource.load-41"><span class="linenos">41</span></a><span class="sd">            Parsed mapping data, or an empty mapping when URL is unset or the</span>
+</span><span id="APISource.load-42"><a href="#APISource.load-42"><span class="linenos">42</span></a><span class="sd">            selected payload node is missing/non-mapping.</span>
+</span><span id="APISource.load-43"><a href="#APISource.load-43"><span class="linenos">43</span></a>
+</span><span id="APISource.load-44"><a href="#APISource.load-44"><span class="linenos">44</span></a><span class="sd">        Raises:</span>
+</span><span id="APISource.load-45"><a href="#APISource.load-45"><span class="linenos">45</span></a><span class="sd">            ValueError: If only one of ``header_name``/``header_value`` is set.</span>
+</span><span id="APISource.load-46"><a href="#APISource.load-46"><span class="linenos">46</span></a><span class="sd">            RuntimeError: If request fails or response JSON is invalid.</span>
+</span><span id="APISource.load-47"><a href="#APISource.load-47"><span class="linenos">47</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="APISource.load-48"><a href="#APISource.load-48"><span class="linenos">48</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="p">:</span>
+</span><span id="APISource.load-49"><a href="#APISource.load-49"><span class="linenos">49</span></a>            <span class="k">return</span> <span class="p">{}</span>
+</span><span id="APISource.load-50"><a href="#APISource.load-50"><span class="linenos">50</span></a>
+</span><span id="APISource.load-51"><a href="#APISource.load-51"><span class="linenos">51</span></a>        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">header_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">header_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="APISource.load-52"><a href="#APISource.load-52"><span class="linenos">52</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;header_name and header_value must be set together&quot;</span><span class="p">)</span>
+</span><span id="APISource.load-53"><a href="#APISource.load-53"><span class="linenos">53</span></a>
+</span><span id="APISource.load-54"><a href="#APISource.load-54"><span class="linenos">54</span></a>        <span class="n">headers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="APISource.load-55"><a href="#APISource.load-55"><span class="linenos">55</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">header_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">header_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="APISource.load-56"><a href="#APISource.load-56"><span class="linenos">56</span></a>            <span class="n">headers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">header_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">header_value</span>
+</span><span id="APISource.load-57"><a href="#APISource.load-57"><span class="linenos">57</span></a>
+</span><span id="APISource.load-58"><a href="#APISource.load-58"><span class="linenos">58</span></a>        <span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;GET&quot;</span><span class="p">)</span>
+</span><span id="APISource.load-59"><a href="#APISource.load-59"><span class="linenos">59</span></a>
+</span><span id="APISource.load-60"><a href="#APISource.load-60"><span class="linenos">60</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="APISource.load-61"><a href="#APISource.load-61"><span class="linenos">61</span></a>            <span class="k">with</span> <span class="n">urlopen</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout_seconds</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+</span><span id="APISource.load-62"><a href="#APISource.load-62"><span class="linenos">62</span></a>                <span class="n">raw_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span id="APISource.load-63"><a href="#APISource.load-63"><span class="linenos">63</span></a>        <span class="k">except</span> <span class="p">(</span><span class="n">HTTPError</span><span class="p">,</span> <span class="n">URLError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="APISource.load-64"><a href="#APISource.load-64"><span class="linenos">64</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to fetch API endpoint: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+</span><span id="APISource.load-65"><a href="#APISource.load-65"><span class="linenos">65</span></a>
+</span><span id="APISource.load-66"><a href="#APISource.load-66"><span class="linenos">66</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="APISource.load-67"><a href="#APISource.load-67"><span class="linenos">67</span></a>            <span class="n">data</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">msgspec</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">raw_data</span><span class="p">)</span>
+</span><span id="APISource.load-68"><a href="#APISource.load-68"><span class="linenos">68</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="APISource.load-69"><a href="#APISource.load-69"><span class="linenos">69</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span id="APISource.load-70"><a href="#APISource.load-70"><span class="linenos">70</span></a>                <span class="sa">f</span><span class="s2">&quot;Failed to parse API response JSON: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="APISource.load-71"><a href="#APISource.load-71"><span class="linenos">71</span></a>            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+</span><span id="APISource.load-72"><a href="#APISource.load-72"><span class="linenos">72</span></a>
+</span><span id="APISource.load-73"><a href="#APISource.load-73"><span class="linenos">73</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_node</span><span class="p">:</span>
+</span><span id="APISource.load-74"><a href="#APISource.load-74"><span class="linenos">74</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+</span><span id="APISource.load-75"><a href="#APISource.load-75"><span class="linenos">75</span></a>                <span class="k">return</span> <span class="p">{}</span>
+</span><span id="APISource.load-76"><a href="#APISource.load-76"><span class="linenos">76</span></a>            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_node</span><span class="p">)</span>
+</span><span id="APISource.load-77"><a href="#APISource.load-77"><span class="linenos">77</span></a>
+</span><span id="APISource.load-78"><a href="#APISource.load-78"><span class="linenos">78</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+</span><span id="APISource.load-79"><a href="#APISource.load-79"><span class="linenos">79</span></a>            <span class="k">return</span> <span class="p">{}</span>
+</span><span id="APISource.load-80"><a href="#APISource.load-80"><span class="linenos">80</span></a>        <span class="k">return</span> <span class="n">data</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Fetch and decode endpoint JSON into mapping form.</p>
+
+<p>The <code>model</code> parameter is accepted for interface compatibility and is
+not used in this source.</p>
+
+<p>Args:
+    model: Optional model type requesting data.</p>
+
+<p>Returns:
+    Parsed mapping data, or an empty mapping when URL is unset or the
+    selected payload node is missing/non-mapping.</p>
+
+<p>Raises:
+    ValueError: If only one of <code><a href="#APISource.header_name">header_name</a></code>/<code><a href="#APISource.header_value">header_value</a></code> is set.
+    RuntimeError: If request fails or response JSON is invalid.</p>
+</div>
+
+
+                            </div>
                 </section>
                 <section id="CliSource">
                             <input id="CliSource-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -2196,6 +2536,251 @@ factories to avoid shared state across instances.</p>
 <p>Returns:
     Mapping of configuration values. When model is <code>None</code>, returns a
     flat mapping with lowercased keys.</p>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="JSONSource">
+                            <input id="JSONSource-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">JSONSource</span><wbr>(<span class="base"><a href="#DataSource">msgspec_settings.DataSource</a></span>):
+
+                <label class="view-source-button" for="JSONSource-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#JSONSource"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="JSONSource-13"><a href="#JSONSource-13"><span class="linenos">13</span></a><span class="k">class</span><span class="w"> </span><span class="nc">JSONSource</span><span class="p">(</span><span class="n">DataSource</span><span class="p">):</span>
+</span><span id="JSONSource-14"><a href="#JSONSource-14"><span class="linenos">14</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Load configuration data from inline JSON or a JSON file.</span>
+</span><span id="JSONSource-15"><a href="#JSONSource-15"><span class="linenos">15</span></a>
+</span><span id="JSONSource-16"><a href="#JSONSource-16"><span class="linenos">16</span></a><span class="sd">    Attributes:</span>
+</span><span id="JSONSource-17"><a href="#JSONSource-17"><span class="linenos">17</span></a><span class="sd">        json_data: Inline JSON payload (string) to decode.</span>
+</span><span id="JSONSource-18"><a href="#JSONSource-18"><span class="linenos">18</span></a><span class="sd">        json_path: Optional JSON file path used when ``json_data`` is unset.</span>
+</span><span id="JSONSource-19"><a href="#JSONSource-19"><span class="linenos">19</span></a><span class="sd">        json_encoding: Text encoding used to read ``json_path``.</span>
+</span><span id="JSONSource-20"><a href="#JSONSource-20"><span class="linenos">20</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="JSONSource-21"><a href="#JSONSource-21"><span class="linenos">21</span></a>
+</span><span id="JSONSource-22"><a href="#JSONSource-22"><span class="linenos">22</span></a>    <span class="n">json_data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="JSONSource-23"><a href="#JSONSource-23"><span class="linenos">23</span></a>    <span class="n">json_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="JSONSource-24"><a href="#JSONSource-24"><span class="linenos">24</span></a>    <span class="n">json_encoding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;utf-8&quot;</span>
+</span><span id="JSONSource-25"><a href="#JSONSource-25"><span class="linenos">25</span></a>
+</span><span id="JSONSource-26"><a href="#JSONSource-26"><span class="linenos">26</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">msgspec</span><span class="o">.</span><span class="n">Struct</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="JSONSource-27"><a href="#JSONSource-27"><span class="linenos">27</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode JSON data into mapping form.</span>
+</span><span id="JSONSource-28"><a href="#JSONSource-28"><span class="linenos">28</span></a>
+</span><span id="JSONSource-29"><a href="#JSONSource-29"><span class="linenos">29</span></a><span class="sd">        The ``model`` parameter is accepted for interface compatibility and is</span>
+</span><span id="JSONSource-30"><a href="#JSONSource-30"><span class="linenos">30</span></a><span class="sd">        not used in this source.</span>
+</span><span id="JSONSource-31"><a href="#JSONSource-31"><span class="linenos">31</span></a>
+</span><span id="JSONSource-32"><a href="#JSONSource-32"><span class="linenos">32</span></a><span class="sd">        Args:</span>
+</span><span id="JSONSource-33"><a href="#JSONSource-33"><span class="linenos">33</span></a><span class="sd">            model: Optional model type requesting data.</span>
+</span><span id="JSONSource-34"><a href="#JSONSource-34"><span class="linenos">34</span></a>
+</span><span id="JSONSource-35"><a href="#JSONSource-35"><span class="linenos">35</span></a><span class="sd">        Returns:</span>
+</span><span id="JSONSource-36"><a href="#JSONSource-36"><span class="linenos">36</span></a><span class="sd">            Parsed mapping data, or an empty mapping when both inline payload</span>
+</span><span id="JSONSource-37"><a href="#JSONSource-37"><span class="linenos">37</span></a><span class="sd">            and path are unset/missing.</span>
+</span><span id="JSONSource-38"><a href="#JSONSource-38"><span class="linenos">38</span></a>
+</span><span id="JSONSource-39"><a href="#JSONSource-39"><span class="linenos">39</span></a><span class="sd">        Raises:</span>
+</span><span id="JSONSource-40"><a href="#JSONSource-40"><span class="linenos">40</span></a><span class="sd">            RuntimeError: If file reading or JSON parsing fails.</span>
+</span><span id="JSONSource-41"><a href="#JSONSource-41"><span class="linenos">41</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="JSONSource-42"><a href="#JSONSource-42"><span class="linenos">42</span></a>        <span class="n">raw_data</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="JSONSource-43"><a href="#JSONSource-43"><span class="linenos">43</span></a>        <span class="n">parse_context</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="JSONSource-44"><a href="#JSONSource-44"><span class="linenos">44</span></a>
+</span><span id="JSONSource-45"><a href="#JSONSource-45"><span class="linenos">45</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="JSONSource-46"><a href="#JSONSource-46"><span class="linenos">46</span></a>            <span class="n">raw_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_data</span>
+</span><span id="JSONSource-47"><a href="#JSONSource-47"><span class="linenos">47</span></a>            <span class="n">parse_context</span> <span class="o">=</span> <span class="s2">&quot;inline JSON payload&quot;</span>
+</span><span id="JSONSource-48"><a href="#JSONSource-48"><span class="linenos">48</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="JSONSource-49"><a href="#JSONSource-49"><span class="linenos">49</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_path</span><span class="p">:</span>
+</span><span id="JSONSource-50"><a href="#JSONSource-50"><span class="linenos">50</span></a>                <span class="k">return</span> <span class="p">{}</span>
+</span><span id="JSONSource-51"><a href="#JSONSource-51"><span class="linenos">51</span></a>
+</span><span id="JSONSource-52"><a href="#JSONSource-52"><span class="linenos">52</span></a>            <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json_path</span><span class="p">)</span>
+</span><span id="JSONSource-53"><a href="#JSONSource-53"><span class="linenos">53</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+</span><span id="JSONSource-54"><a href="#JSONSource-54"><span class="linenos">54</span></a>                <span class="k">return</span> <span class="p">{}</span>
+</span><span id="JSONSource-55"><a href="#JSONSource-55"><span class="linenos">55</span></a>
+</span><span id="JSONSource-56"><a href="#JSONSource-56"><span class="linenos">56</span></a>            <span class="k">try</span><span class="p">:</span>
+</span><span id="JSONSource-57"><a href="#JSONSource-57"><span class="linenos">57</span></a>                <span class="n">raw_data</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">json_encoding</span><span class="p">)</span>
+</span><span id="JSONSource-58"><a href="#JSONSource-58"><span class="linenos">58</span></a>            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">UnicodeDecodeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="JSONSource-59"><a href="#JSONSource-59"><span class="linenos">59</span></a>                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span id="JSONSource-60"><a href="#JSONSource-60"><span class="linenos">60</span></a>                    <span class="sa">f</span><span class="s2">&quot;Failed to read JSON file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">json_path</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="JSONSource-61"><a href="#JSONSource-61"><span class="linenos">61</span></a>                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+</span><span id="JSONSource-62"><a href="#JSONSource-62"><span class="linenos">62</span></a>            <span class="n">parse_context</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;JSON file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">json_path</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="JSONSource-63"><a href="#JSONSource-63"><span class="linenos">63</span></a>
+</span><span id="JSONSource-64"><a href="#JSONSource-64"><span class="linenos">64</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="JSONSource-65"><a href="#JSONSource-65"><span class="linenos">65</span></a>            <span class="n">data</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">msgspec</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">raw_data</span><span class="p">)</span>
+</span><span id="JSONSource-66"><a href="#JSONSource-66"><span class="linenos">66</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="JSONSource-67"><a href="#JSONSource-67"><span class="linenos">67</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to parse </span><span class="si">{</span><span class="n">parse_context</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+</span><span id="JSONSource-68"><a href="#JSONSource-68"><span class="linenos">68</span></a>
+</span><span id="JSONSource-69"><a href="#JSONSource-69"><span class="linenos">69</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+</span><span id="JSONSource-70"><a href="#JSONSource-70"><span class="linenos">70</span></a>            <span class="k">return</span> <span class="p">{}</span>
+</span><span id="JSONSource-71"><a href="#JSONSource-71"><span class="linenos">71</span></a>        <span class="k">return</span> <span class="n">data</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Load configuration data from inline JSON or a JSON file.</p>
+
+<p>Attributes:
+    json_data: Inline JSON payload (string) to decode.
+    json_path: Optional JSON file path used when <code><a href="#JSONSource.json_data">json_data</a></code> is unset.
+    json_encoding: Text encoding used to read <code><a href="#JSONSource.json_path">json_path</a></code>.</p>
+</div>
+
+
+                            <div id="JSONSource.__init__" class="classattr">
+                                        <input id="JSONSource.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="name">JSONSource</span><span class="signature pdoc-code condensed">(<span class="param"><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span>, </span><span class="param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></span>)</span>
+
+                <label class="view-source-button" for="JSONSource.__init__-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#JSONSource.__init__"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="JSONSource.__init__-87"><a href="#JSONSource.__init__-87"><span class="linenos"> 87</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="s2">&quot;DataModel&quot;</span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DataModel&quot;</span><span class="p">:</span>
+</span><span id="JSONSource.__init__-88"><a href="#JSONSource.__init__-88"><span class="linenos"> 88</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate a DataModel from merged datasource data and explicit kwargs.</span>
+</span><span id="JSONSource.__init__-89"><a href="#JSONSource.__init__-89"><span class="linenos"> 89</span></a>
+</span><span id="JSONSource.__init__-90"><a href="#JSONSource.__init__-90"><span class="linenos"> 90</span></a><span class="sd">        Args:</span>
+</span><span id="JSONSource.__init__-91"><a href="#JSONSource.__init__-91"><span class="linenos"> 91</span></a><span class="sd">            *args: Positional arguments (not supported).</span>
+</span><span id="JSONSource.__init__-92"><a href="#JSONSource.__init__-92"><span class="linenos"> 92</span></a><span class="sd">            **kwargs: Explicit field overrides.</span>
+</span><span id="JSONSource.__init__-93"><a href="#JSONSource.__init__-93"><span class="linenos"> 93</span></a>
+</span><span id="JSONSource.__init__-94"><a href="#JSONSource.__init__-94"><span class="linenos"> 94</span></a><span class="sd">        Returns:</span>
+</span><span id="JSONSource.__init__-95"><a href="#JSONSource.__init__-95"><span class="linenos"> 95</span></a><span class="sd">            A validated DataModel instance.</span>
+</span><span id="JSONSource.__init__-96"><a href="#JSONSource.__init__-96"><span class="linenos"> 96</span></a>
+</span><span id="JSONSource.__init__-97"><a href="#JSONSource.__init__-97"><span class="linenos"> 97</span></a><span class="sd">        Raises:</span>
+</span><span id="JSONSource.__init__-98"><a href="#JSONSource.__init__-98"><span class="linenos"> 98</span></a><span class="sd">            TypeError: If positional arguments are provided.</span>
+</span><span id="JSONSource.__init__-99"><a href="#JSONSource.__init__-99"><span class="linenos"> 99</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="JSONSource.__init__-100"><a href="#JSONSource.__init__-100"><span class="linenos">100</span></a>        <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
+</span><span id="JSONSource.__init__-101"><a href="#JSONSource.__init__-101"><span class="linenos">101</span></a>            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+</span><span id="JSONSource.__init__-102"><a href="#JSONSource.__init__-102"><span class="linenos">102</span></a>                <span class="sa">f</span><span class="s2">&quot;Class </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not support positional arguments. &quot;</span>
+</span><span id="JSONSource.__init__-103"><a href="#JSONSource.__init__-103"><span class="linenos">103</span></a>                <span class="s2">&quot;Use keyword arguments instead.&quot;</span>
+</span><span id="JSONSource.__init__-104"><a href="#JSONSource.__init__-104"><span class="linenos">104</span></a>            <span class="p">)</span>
+</span><span id="JSONSource.__init__-105"><a href="#JSONSource.__init__-105"><span class="linenos">105</span></a>
+</span><span id="JSONSource.__init__-106"><a href="#JSONSource.__init__-106"><span class="linenos">106</span></a>        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__datasources__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">DataSource</span><span class="p">):</span>
+</span><span id="JSONSource.__init__-107"><a href="#JSONSource.__init__-107"><span class="linenos">107</span></a>            <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_datasources</span><span class="p">(</span><span class="o">*</span><span class="bp">cls</span><span class="o">.</span><span class="n">__datasources__</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span id="JSONSource.__init__-108"><a href="#JSONSource.__init__-108"><span class="linenos">108</span></a>
+</span><span id="JSONSource.__init__-109"><a href="#JSONSource.__init__-109"><span class="linenos">109</span></a>        <span class="k">return</span> <span class="n">msgspec</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="bp">cls</span><span class="p">,</span> <span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">str_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Instantiate a DataModel from merged datasource data and explicit kwargs.</p>
+
+<p>Args:
+    *args: Positional arguments (not supported).
+    **kwargs: Explicit field overrides.</p>
+
+<p>Returns:
+    A validated DataModel instance.</p>
+
+<p>Raises:
+    TypeError: If positional arguments are provided.</p>
+</div>
+
+
+                            </div>
+                            <div id="JSONSource.json_data" class="classattr">
+                                <div class="attr variable">
+            <span class="name">json_data</span><span class="annotation">: str | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#JSONSource.json_data"></a>
+    
+    
+
+                            </div>
+                            <div id="JSONSource.json_path" class="classattr">
+                                <div class="attr variable">
+            <span class="name">json_path</span><span class="annotation">: str | None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#JSONSource.json_path"></a>
+    
+    
+
+                            </div>
+                            <div id="JSONSource.json_encoding" class="classattr">
+                                <div class="attr variable">
+            <span class="name">json_encoding</span><span class="annotation">: str</span>
+
+        
+    </div>
+    <a class="headerlink" href="#JSONSource.json_encoding"></a>
+    
+    
+
+                            </div>
+                            <div id="JSONSource.load" class="classattr">
+                                        <input id="JSONSource.load-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">load</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">msgspec</span><span class="o">.</span><span class="n">Struct</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Any</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="JSONSource.load-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#JSONSource.load"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="JSONSource.load-26"><a href="#JSONSource.load-26"><span class="linenos">26</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">msgspec</span><span class="o">.</span><span class="n">Struct</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="JSONSource.load-27"><a href="#JSONSource.load-27"><span class="linenos">27</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Decode JSON data into mapping form.</span>
+</span><span id="JSONSource.load-28"><a href="#JSONSource.load-28"><span class="linenos">28</span></a>
+</span><span id="JSONSource.load-29"><a href="#JSONSource.load-29"><span class="linenos">29</span></a><span class="sd">        The ``model`` parameter is accepted for interface compatibility and is</span>
+</span><span id="JSONSource.load-30"><a href="#JSONSource.load-30"><span class="linenos">30</span></a><span class="sd">        not used in this source.</span>
+</span><span id="JSONSource.load-31"><a href="#JSONSource.load-31"><span class="linenos">31</span></a>
+</span><span id="JSONSource.load-32"><a href="#JSONSource.load-32"><span class="linenos">32</span></a><span class="sd">        Args:</span>
+</span><span id="JSONSource.load-33"><a href="#JSONSource.load-33"><span class="linenos">33</span></a><span class="sd">            model: Optional model type requesting data.</span>
+</span><span id="JSONSource.load-34"><a href="#JSONSource.load-34"><span class="linenos">34</span></a>
+</span><span id="JSONSource.load-35"><a href="#JSONSource.load-35"><span class="linenos">35</span></a><span class="sd">        Returns:</span>
+</span><span id="JSONSource.load-36"><a href="#JSONSource.load-36"><span class="linenos">36</span></a><span class="sd">            Parsed mapping data, or an empty mapping when both inline payload</span>
+</span><span id="JSONSource.load-37"><a href="#JSONSource.load-37"><span class="linenos">37</span></a><span class="sd">            and path are unset/missing.</span>
+</span><span id="JSONSource.load-38"><a href="#JSONSource.load-38"><span class="linenos">38</span></a>
+</span><span id="JSONSource.load-39"><a href="#JSONSource.load-39"><span class="linenos">39</span></a><span class="sd">        Raises:</span>
+</span><span id="JSONSource.load-40"><a href="#JSONSource.load-40"><span class="linenos">40</span></a><span class="sd">            RuntimeError: If file reading or JSON parsing fails.</span>
+</span><span id="JSONSource.load-41"><a href="#JSONSource.load-41"><span class="linenos">41</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="JSONSource.load-42"><a href="#JSONSource.load-42"><span class="linenos">42</span></a>        <span class="n">raw_data</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="JSONSource.load-43"><a href="#JSONSource.load-43"><span class="linenos">43</span></a>        <span class="n">parse_context</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="JSONSource.load-44"><a href="#JSONSource.load-44"><span class="linenos">44</span></a>
+</span><span id="JSONSource.load-45"><a href="#JSONSource.load-45"><span class="linenos">45</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="JSONSource.load-46"><a href="#JSONSource.load-46"><span class="linenos">46</span></a>            <span class="n">raw_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_data</span>
+</span><span id="JSONSource.load-47"><a href="#JSONSource.load-47"><span class="linenos">47</span></a>            <span class="n">parse_context</span> <span class="o">=</span> <span class="s2">&quot;inline JSON payload&quot;</span>
+</span><span id="JSONSource.load-48"><a href="#JSONSource.load-48"><span class="linenos">48</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="JSONSource.load-49"><a href="#JSONSource.load-49"><span class="linenos">49</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_path</span><span class="p">:</span>
+</span><span id="JSONSource.load-50"><a href="#JSONSource.load-50"><span class="linenos">50</span></a>                <span class="k">return</span> <span class="p">{}</span>
+</span><span id="JSONSource.load-51"><a href="#JSONSource.load-51"><span class="linenos">51</span></a>
+</span><span id="JSONSource.load-52"><a href="#JSONSource.load-52"><span class="linenos">52</span></a>            <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json_path</span><span class="p">)</span>
+</span><span id="JSONSource.load-53"><a href="#JSONSource.load-53"><span class="linenos">53</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+</span><span id="JSONSource.load-54"><a href="#JSONSource.load-54"><span class="linenos">54</span></a>                <span class="k">return</span> <span class="p">{}</span>
+</span><span id="JSONSource.load-55"><a href="#JSONSource.load-55"><span class="linenos">55</span></a>
+</span><span id="JSONSource.load-56"><a href="#JSONSource.load-56"><span class="linenos">56</span></a>            <span class="k">try</span><span class="p">:</span>
+</span><span id="JSONSource.load-57"><a href="#JSONSource.load-57"><span class="linenos">57</span></a>                <span class="n">raw_data</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">json_encoding</span><span class="p">)</span>
+</span><span id="JSONSource.load-58"><a href="#JSONSource.load-58"><span class="linenos">58</span></a>            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">UnicodeDecodeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="JSONSource.load-59"><a href="#JSONSource.load-59"><span class="linenos">59</span></a>                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span id="JSONSource.load-60"><a href="#JSONSource.load-60"><span class="linenos">60</span></a>                    <span class="sa">f</span><span class="s2">&quot;Failed to read JSON file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">json_path</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="JSONSource.load-61"><a href="#JSONSource.load-61"><span class="linenos">61</span></a>                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+</span><span id="JSONSource.load-62"><a href="#JSONSource.load-62"><span class="linenos">62</span></a>            <span class="n">parse_context</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;JSON file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">json_path</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="JSONSource.load-63"><a href="#JSONSource.load-63"><span class="linenos">63</span></a>
+</span><span id="JSONSource.load-64"><a href="#JSONSource.load-64"><span class="linenos">64</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="JSONSource.load-65"><a href="#JSONSource.load-65"><span class="linenos">65</span></a>            <span class="n">data</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">msgspec</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">raw_data</span><span class="p">)</span>
+</span><span id="JSONSource.load-66"><a href="#JSONSource.load-66"><span class="linenos">66</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="JSONSource.load-67"><a href="#JSONSource.load-67"><span class="linenos">67</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to parse </span><span class="si">{</span><span class="n">parse_context</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+</span><span id="JSONSource.load-68"><a href="#JSONSource.load-68"><span class="linenos">68</span></a>
+</span><span id="JSONSource.load-69"><a href="#JSONSource.load-69"><span class="linenos">69</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+</span><span id="JSONSource.load-70"><a href="#JSONSource.load-70"><span class="linenos">70</span></a>            <span class="k">return</span> <span class="p">{}</span>
+</span><span id="JSONSource.load-71"><a href="#JSONSource.load-71"><span class="linenos">71</span></a>        <span class="k">return</span> <span class="n">data</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Decode JSON data into mapping form.</p>
+
+<p>The <code>model</code> parameter is accepted for interface compatibility and is
+not used in this source.</p>
+
+<p>Args:
+    model: Optional model type requesting data.</p>
+
+<p>Returns:
+    Parsed mapping data, or an empty mapping when both inline payload
+    and path are unset/missing.</p>
+
+<p>Raises:
+    RuntimeError: If file reading or JSON parsing fails.</p>
 </div>
 
 
