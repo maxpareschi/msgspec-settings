@@ -82,3 +82,18 @@ def test_unmapped_json_keys_are_stored_on_source() -> None:
 
     assert data == {"host": "example.com", "log": {"level": "DEBUG"}}
     assert src.__unmapped_kwargs__ == {"unknown": 1, "log": {"levle": "typo"}}
+
+
+def test_json_alias_fields_are_supported_on_resolve() -> None:
+    """Canonical JSON keys should resolve to alias output paths."""
+
+    class AliasLog(msgspec.Struct, kw_only=True):
+        level: str = msgspec.field(default="INFO", name="LEV")
+
+    class AliasModel(msgspec.Struct, kw_only=True):
+        port: int = msgspec.field(default=8080, name="PORT_NUMBER")
+        log: AliasLog = msgspec.field(default_factory=AliasLog, name="LOGGER")
+
+    src = JSONSource(json_data='{"port":9000,"log":{"level":"WARN"}}')
+    data = src.resolve(model=AliasModel)
+    assert data == {"PORT_NUMBER": 9000, "LOGGER": {"LEV": "WARN"}}

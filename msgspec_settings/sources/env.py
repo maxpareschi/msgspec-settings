@@ -33,6 +33,8 @@ class EnvironSource(DataSource):
             When ``model`` is ``None``, a flat lowercase mapping.
             Otherwise ``(mapped, unmatched)`` where unmatched keys are captured
             as source unmapped runtime state by the ``DataSource`` wrapper.
+            Field resolution accepts canonical and encoded names, and mapped
+            keys are emitted as encoded names.
 
         Raises:
             ValueError: If ``env_prefix`` is empty.

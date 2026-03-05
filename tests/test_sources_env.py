@@ -1,6 +1,7 @@
 """Tests for environment datasource behavior."""
 
 import pytest
+import msgspec
 
 from msgspec_settings import EnvironSource
 from msgspec_settings.mapping import map_env_to_model
@@ -144,3 +145,20 @@ def test_blank_env_prefix_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     src = EnvironSource(env_prefix="   ")
     with pytest.raises(ValueError, match="env_prefix must be a non-empty"):
         src.resolve(model=SimpleModel)
+
+
+def test_env_alias_fields_are_supported(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Alias env keys should map to alias output paths expected by msgspec."""
+
+    class AliasLog(msgspec.Struct, kw_only=True):
+        level: str = msgspec.field(default="INFO", name="LEV")
+
+    class AliasModel(msgspec.Struct, kw_only=True):
+        port: int = msgspec.field(default=8080, name="PORT_NUMBER")
+        log: AliasLog = msgspec.field(default_factory=AliasLog, name="LOGGER")
+
+    monkeypatch.setenv("APP_PORT_NUMBER", "9000")
+    monkeypatch.setenv("APP_LOGGER_LEV", "WARN")
+
+    data = EnvironSource(env_prefix="APP").resolve(model=AliasModel)
+    assert data == {"PORT_NUMBER": 9000, "LOGGER": {"LEV": "WARN"}}

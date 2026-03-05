@@ -56,3 +56,18 @@ class OptionalNestedModel(msgspec.Struct, kw_only=True):
     """Model fixture with an optional nested Struct field."""
 
     log: LogModel | None = None
+
+
+class AliasLogModel(msgspec.Struct, kw_only=True):
+    """Nested model fixture using encoded/alias field names."""
+
+    level: str = msgspec.field(default="INFO", name="LEVEL")
+    file_path: str = msgspec.field(default="/var/log/app.log", name="FILE_PATH")
+
+
+class AliasServerModel(msgspec.Struct, kw_only=True):
+    """Server fixture with top-level and nested encoded field names."""
+
+    host: str = msgspec.field(default="localhost", name="HOST")
+    port: int = msgspec.field(default=8080, name="PORT")
+    log: AliasLogModel = msgspec.field(default_factory=AliasLogModel, name="LOG")

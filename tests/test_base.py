@@ -2,6 +2,7 @@
 
 from typing import Any
 
+import msgspec
 import pytest
 
 from msgspec_settings import DataModel, DataSource, datasources
@@ -91,6 +92,25 @@ def test_json_and_data_helpers_roundtrip() -> None:
     assert from_json.get_unmapped_payload() == {}
 
 
+def test_model_helpers_support_field_aliases() -> None:
+    """Constructor/from_data/from_json should accept canonical and alias keys."""
+
+    class App(DataModel):
+        host: str = msgspec.field(default="localhost", name="HOST")
+        port: int = msgspec.field(default=8080, name="PORT")
+
+    from_kwargs = App(host="kw", PORT=1)
+    from_data = App.from_data({"host": "data", "PORT": 2})
+    from_json = App.from_json('{"host":"json","PORT":3}')
+
+    assert from_kwargs.host == "kw"
+    assert from_kwargs.port == 1
+    assert from_data.host == "data"
+    assert from_data.port == 2
+    assert from_json.host == "json"
+    assert from_json.port == 3
+
+
 def test_model_json_schema_returns_json() -> None:
     """Schema helper should return a JSON string payload."""
 
@@ -118,8 +138,8 @@ def test_model_stores_datasource_instances() -> None:
     assert model.__datasource_instances__[0] is not src
 
 
-def test_get_unmapped_payload_is_empty_without_datasources() -> None:
-    """Models without datasources should expose empty unmapped payload data."""
+def test_get_unmapped_payload_includes_unknown_constructor_kwargs() -> None:
+    """Unknown constructor kwargs should be exposed in unmapped payload."""
 
     class App(DataModel):
         host: str = "default"
@@ -127,7 +147,7 @@ def test_get_unmapped_payload_is_empty_without_datasources() -> None:
     model = App(host="x", hots="typo")
 
     assert model.host == "x"
-    assert model.get_unmapped_payload() == {}
+    assert model.get_unmapped_payload() == {"hots": "typo"}
 
 
 def test_get_unmapped_payload_merges_source_order_and_is_cached() -> None:
@@ -156,12 +176,16 @@ def test_get_unmapped_payload_merges_source_order_and_is_cached() -> None:
     class App(DataModel):
         host: str = "default"
 
-    model = App()
+    model = App(shared={"y": "from_kwargs"}, extraneous=True)
     first = model.get_unmapped_payload()
     second = model.get_unmapped_payload()
 
     assert model.host == "second"
-    assert first == {"debug": {"a": 1, "b": 2}, "shared": {"x": 1, "y": 2}}
+    assert first == {
+        "debug": {"a": 1, "b": 2},
+        "shared": {"x": 1, "y": "from_kwargs"},
+        "extraneous": True,
+    }
     assert second == first
     assert model.__unmapped_cache__ == first
 

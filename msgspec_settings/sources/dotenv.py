@@ -149,7 +149,9 @@ class DotEnvSource(DataSource):
 
         Returns:
             Mapping of model-recognized values. When ``model`` is ``None``,
-            returns a flat lowercase mapping.
+            returns a flat lowercase mapping. With ``model``, field resolution
+            accepts canonical and encoded names, and mapped keys are emitted as
+            encoded names.
 
         Raises:
             ValueError: If ``env_prefix`` is empty.

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import msgspec
 import pytest
 
 from msgspec_settings import DotEnvSource, EnvironSource, DataModel, datasources
@@ -167,3 +168,25 @@ def test_dotenv_os_error_raises_runtime_error(
     src = DotEnvSource(dotenv_path=str(dotenv_path), env_prefix="APP")
     with pytest.raises(RuntimeError, match="Failed to read dotenv"):
         src.resolve(model=SimpleModel)
+
+
+def test_dotenv_alias_fields_are_supported(tmp_path: Path) -> None:
+    """Alias dotenv keys should map to alias output paths expected by msgspec."""
+
+    class AliasLog(msgspec.Struct, kw_only=True):
+        level: str = msgspec.field(default="INFO", name="LEV")
+
+    class AliasModel(msgspec.Struct, kw_only=True):
+        port: int = msgspec.field(default=8080, name="PORT_NUMBER")
+        log: AliasLog = msgspec.field(default_factory=AliasLog, name="LOGGER")
+
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "APP_PORT_NUMBER=9000\nAPP_LOGGER_LEV=WARN\n",
+        encoding="utf-8",
+    )
+
+    data = DotEnvSource(dotenv_path=str(env_file), env_prefix="APP").resolve(
+        model=AliasModel
+    )
+    assert data == {"PORT_NUMBER": 9000, "LOGGER": {"LEV": "WARN"}}

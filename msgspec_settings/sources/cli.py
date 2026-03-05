@@ -66,7 +66,7 @@ def _make_flag_name(dotted_path: str, kebab_case: bool = True) -> str:
     """Build a long option flag from a dotted field path.
 
     Args:
-        dotted_path: Canonical dotted field path.
+        dotted_path: Dotted model field path (canonical or encoded).
         kebab_case: Whether to render separators as dashes.
 
     Returns:
@@ -214,6 +214,8 @@ class CliSource(DataSource):
             Either:
             - nested mapping of explicitly provided values, or
             - tuple ``(mapped, unmapped)`` when unknown CLI args are present.
+            Mapped keys use encoded field names so payloads can be passed
+            directly to ``msgspec.convert`` for aliased models.
 
         Raises:
             TypeError: On generated option-name collisions.
@@ -227,10 +229,11 @@ class CliSource(DataSource):
         if not flat_with_alias:
             return {}
 
-        flat_fields: dict[str, Any] = {
-            dotted_path: field_info[1]
-            for dotted_path, field_info in flat_with_alias.items()
-        }
+        path_to_type: dict[str, Any] = {}
+        for canonical_path, field_meta in flat_with_alias.items():
+            alias_path, field_type = field_meta
+            path_to_type[canonical_path] = field_type
+            path_to_type[alias_path] = field_type
 
         params: list[click.Parameter] = []
         param_to_path: dict[str, str] = {}
@@ -302,7 +305,7 @@ class CliSource(DataSource):
                 top_long_flags = dedupe_keep_order(top_long_flags)
 
                 json_param_name = top_field.replace(".", "_").replace("-", "_")
-                json_struct_params[json_param_name] = top_field
+                json_struct_params[json_param_name] = top_alias
                 json_decls = list(top_long_flags)
                 if not use_kebab:
                     json_decls.append(json_param_name)
@@ -332,12 +335,12 @@ class CliSource(DataSource):
 
             param_name = dotted_path.replace(".", "_").replace("-", "_")
             existing_path = param_to_path.get(param_name)
-            if existing_path is not None and existing_path != dotted_path:
+            if existing_path is not None and existing_path != alias_path:
                 raise TypeError(
                     f"CLI option name collision: '{existing_path}' and "
-                    f"'{dotted_path}' both map to '{param_name}'"
+                    f"'{alias_path}' both map to '{param_name}'"
                 )
-            param_to_path[param_name] = dotted_path
+            param_to_path[param_name] = alias_path
 
             for decl in long_flags:
                 _register_decl(decl, dotted_path)
@@ -364,12 +367,12 @@ class CliSource(DataSource):
 
                 neg_param_name = "no_" + param_name
                 existing_neg = bool_neg_map.get(neg_param_name)
-                if existing_neg is not None and existing_neg != dotted_path:
+                if existing_neg is not None and existing_neg != alias_path:
                     raise TypeError(
                         f"CLI bool negation collision: '{existing_neg}' and "
-                        f"'{dotted_path}' both map to '{neg_param_name}'"
+                        f"'{alias_path}' both map to '{neg_param_name}'"
                     )
-                bool_neg_map[neg_param_name] = dotted_path
+                bool_neg_map[neg_param_name] = alias_path
 
                 neg_decls = [f"--no-{flag[2:]}" for flag in long_flags]
                 if not use_kebab:
@@ -469,7 +472,7 @@ class CliSource(DataSource):
             if dotted_path is None:
                 continue
 
-            field_type = flat_fields.get(dotted_path)
+            field_type = path_to_type.get(dotted_path)
             if field_type is not None and isinstance(value, str):
                 unwrapped = unwrap_annotated(field_type)
                 coerced = coerce_env_value(value, field_type)

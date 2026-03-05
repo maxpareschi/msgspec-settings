@@ -58,3 +58,20 @@ def test_unmapped_toml_keys_are_stored_on_source(tmp_path: Path) -> None:
 
     assert data == {"host": "example.com", "log": {"level": "DEBUG"}}
     assert src.__unmapped_kwargs__ == {"unknown": 1, "log": {"levle": "typo"}}
+
+
+def test_toml_alias_fields_are_supported_on_resolve(tmp_path: Path) -> None:
+    """Canonical TOML keys should resolve to alias output paths."""
+
+    class AliasLog(msgspec.Struct, kw_only=True):
+        level: str = msgspec.field(default="INFO", name="LEV")
+
+    class AliasModel(msgspec.Struct, kw_only=True):
+        port: int = msgspec.field(default=8080, name="PORT_NUMBER")
+        log: AliasLog = msgspec.field(default_factory=AliasLog, name="LOGGER")
+
+    path = tmp_path / "config.toml"
+    path.write_text('port = 9000\n[log]\nlevel = "WARN"\n', encoding="utf-8")
+
+    data = TomlSource(toml_path=str(path)).resolve(model=AliasModel)
+    assert data == {"PORT_NUMBER": 9000, "LOGGER": {"LEV": "WARN"}}

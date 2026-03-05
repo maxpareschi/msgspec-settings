@@ -10,6 +10,7 @@ from msgspec_settings.mapping import (
     flatten_model_fields_with_alias,
     map_env_to_model,
     split_mapping_by_model_fields,
+    split_top_level_mapping_by_model_fields,
 )
 from msgspec_settings.merge import dedupe_keep_order, deep_merge_into, set_nested
 from msgspec_settings.typing import (
@@ -20,7 +21,7 @@ from msgspec_settings.typing import (
     unwrap_annotated,
 )
 
-from ._models import LogModel, ServerModel, SimpleModel
+from ._models import AliasServerModel, LogModel, ServerModel, SimpleModel
 
 
 def test_flatten_model_fields_with_alias_returns_leaf_paths() -> None:
@@ -139,3 +140,55 @@ def test_split_mapping_by_model_fields_extracts_unknown_nested_keys() -> None:
 
     assert mapped == {"host": "example.com", "log": {"level": "DEBUG"}}
     assert unmapped == {"extra": "x", "log": {"levle": "typo"}}
+
+
+def test_split_mapping_by_model_fields_supports_field_aliases() -> None:
+    """Split helper should accept canonical/alias keys and emit alias paths."""
+    payload = {
+        "host": "example.com",
+        "PORT": 9000,
+        "LOG": {"level": "DEBUG", "FILE_PATH": "/tmp/app.log", "levle": "typo"},
+    }
+    mapped, unmapped = split_mapping_by_model_fields(payload, AliasServerModel)
+
+    assert mapped == {
+        "HOST": "example.com",
+        "PORT": 9000,
+        "LOG": {"LEVEL": "DEBUG", "FILE_PATH": "/tmp/app.log"},
+    }
+    assert unmapped == {"LOG": {"levle": "typo"}}
+
+
+def test_split_top_level_mapping_by_model_fields_does_not_recurse() -> None:
+    """Top-level split helper should only partition first-level keys."""
+
+    class AliasLog(msgspec.Struct, kw_only=True):
+        level: str = msgspec.field(default="INFO", name="LEVEL")
+
+    class AliasModel(msgspec.Struct, kw_only=True):
+        host: str = msgspec.field(default="localhost", name="HOST")
+        log: AliasLog = msgspec.field(default_factory=AliasLog, name="LOG")
+
+    payload = {
+        "host": "example.com",
+        "LOG": {"level": "DEBUG", "unknown": "x"},
+        "extra": "y",
+    }
+
+    mapped, unmapped = split_top_level_mapping_by_model_fields(payload, AliasModel)
+    assert mapped == {"HOST": "example.com", "LOG": {"level": "DEBUG", "unknown": "x"}}
+    assert unmapped == {"extra": "y"}
+
+
+def test_map_env_to_model_prefers_exact_top_level_match() -> None:
+    """Exact env-key field matches should win over shorter nested prefixes."""
+
+    class Nested(msgspec.Struct, kw_only=True):
+        level: str = "INFO"
+
+    class Ambiguous(msgspec.Struct, kw_only=True):
+        log: Nested = msgspec.field(default_factory=Nested)
+        log_level: str = "WARN"
+
+    data = map_env_to_model({"LOG_LEVEL": "ERROR"}, Ambiguous, "_")
+    assert data == {"log_level": "ERROR"}

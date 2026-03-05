@@ -16,7 +16,10 @@ import msgspec
 
 from .fields import apply_entry_defaults
 from .merge import deep_merge_into
-from .mapping import split_mapping_by_model_fields
+from .mapping import (
+    split_mapping_by_model_fields,
+    split_top_level_mapping_by_model_fields,
+)
 
 
 _JSON_ENCODER: msgspec.json.Encoder | None = None
@@ -69,6 +72,7 @@ class DataModelMeta(msgspec.StructMeta):
             "__schema__",
             "__datasource_defs__",
             "__datasource_instances__",
+            "__constructor_unmapped__",
             "__unmapped_cache__",
             "__unmapped_kwargs__",
         }
@@ -100,10 +104,13 @@ class DataModelMeta(msgspec.StructMeta):
 
         Args:
             *args: Positional arguments. Not supported.
-            **kwargs: Field values and explicit overrides.
+            **kwargs: Field values and explicit overrides. Unknown keys are
+                captured on the instance and exposed via
+                :meth:`DataModel.get_unmapped_payload`.
 
         Returns:
-            Validated model instance with runtime datasource state attached.
+            Validated model instance with runtime datasource and unmapped state
+            attached.
 
         Raises:
             TypeError: If positional arguments are provided.
@@ -114,38 +121,96 @@ class DataModelMeta(msgspec.StructMeta):
                 "Use keyword arguments instead."
             )
 
+        prepared_kwargs, constructor_unmapped = cls._split_constructor_kwargs(kwargs)
         datasource_instances: tuple["DataSource", ...] = ()
         unmapped_cache: dict[str, Any] | None = {}
 
         if cls.__datasource_defs__ is not None and not issubclass(cls, DataSource):
-            kwargs, datasource_instances = cls._collect_datasources_payload(
-                *cls.__datasource_defs__, **kwargs
+            prepared, datasource_instances = cls._collect_datasources_payload(
+                *cls.__datasource_defs__, **prepared_kwargs
             )
             unmapped_cache = None
-
-        instance = msgspec.convert(
-            kwargs, type=cls, from_attributes=True, str_keys=True
-        )
+        else:
+            prepared = prepared_kwargs
+            unmapped_cache = constructor_unmapped
+        instance = msgspec.convert(prepared, type=cls)
         return cls._setup_instance(
             instance,
             datasource_instances=datasource_instances,
             unmapped_cache=unmapped_cache,
+            constructor_unmapped=constructor_unmapped,
         )
 
 
 class DataModel(msgspec.Struct, metaclass=DataModelMeta):
-    """Base typed settings model with optional datasource composition."""
+    """Base typed settings model with optional datasource composition.
+
+    ``DataModel`` instances may be built from ordered datasource patches plus
+    constructor keyword overrides. Source-level unmapped values and unknown
+    constructor kwargs can be inspected with :meth:`get_unmapped_payload`.
+    """
 
     __json_encoder__: ClassVar[msgspec.json.Encoder] = get_json_encoder()
     __json_decoder__: ClassVar[msgspec.json.Decoder | None] = None
     __schema__: ClassVar[dict[str, Any] | None] = None
     __datasource_defs__: ClassVar[tuple["DataSource", ...] | None] = None
 
+    @classmethod
+    def _split_payload_for_convert(
+        cls,
+        payload: Mapping[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Split payload keys into model-mapped and unmapped dictionaries.
+
+        Args:
+            payload: Raw mapping payload.
+
+        Returns:
+            Tuple ``(mapped, unmapped)`` where ``mapped`` contains only
+            model-recognized keys normalized to encoded field names, and
+            ``unmapped`` contains keys not recognized by ``cls``.
+        """
+        return split_mapping_by_model_fields(payload, cls)
+
+    @classmethod
+    def _split_constructor_kwargs(
+        cls,
+        payload: Mapping[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Split constructor kwargs into mapped and unmapped top-level keys.
+
+        Args:
+            payload: Constructor kwargs mapping.
+
+        Returns:
+            Tuple ``(mapped, unmapped)`` where ``mapped`` uses encoded
+            top-level field names.
+        """
+        return split_top_level_mapping_by_model_fields(payload, cls)
+
+    @classmethod
+    def _prepare_payload_for_convert(
+        cls,
+        payload: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Normalize payload keys to model-accepted field names.
+
+        Args:
+            payload: Raw mapping payload.
+
+        Returns:
+            Mapping filtered to recognized model keys and normalized to encoded
+            field names.
+        """
+        mapped, _ = cls._split_payload_for_convert(payload)
+        return mapped
+
     @staticmethod
     def _setup_instance(
         instance: "DataModel",
         datasource_instances: tuple["DataSource", ...] | None = None,
         unmapped_cache: dict[str, Any] | None = None,
+        constructor_unmapped: Mapping[str, Any] | None = None,
     ) -> "DataModel":
         """Attach runtime datasource and unmapped state to one instance.
 
@@ -155,6 +220,8 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
                 ``instance``.
             unmapped_cache: Precomputed unmapped cache, or ``None`` to defer
                 computation until unmapped payload access.
+            constructor_unmapped: Unmapped key/value pairs provided directly as
+                constructor kwargs.
 
         Returns:
             Same ``instance`` with runtime attributes initialized.
@@ -163,6 +230,9 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
             datasource_instances = ()
         instance.__datasource_instances__ = datasource_instances
         instance.__unmapped_cache__ = unmapped_cache
+        instance.__constructor_unmapped__ = (
+            constructor_unmapped if constructor_unmapped is not None else {}
+        )
         return instance
 
     @classmethod
@@ -174,8 +244,10 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
 
         Returns:
             Validated model instance with empty runtime datasource state.
+            Keys not recognized by ``cls`` are ignored.
         """
-        instance = msgspec.convert(data, type=cls, from_attributes=True, str_keys=True)
+        prepared = cls._prepare_payload_for_convert(data)
+        instance = msgspec.convert(prepared, type=cls)
         return cls._setup_instance(instance)
 
     @classmethod
@@ -187,10 +259,16 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
 
         Returns:
             Decoded model instance with empty runtime datasource state.
+            Keys not recognized by ``cls`` are ignored.
+
+        Raises:
+            TypeError: If decoded JSON is not an object mapping.
         """
-        if cls.__json_decoder__ is None:
-            cls.__json_decoder__ = msgspec.json.Decoder(type=cls)
-        instance = cls.__json_decoder__.decode(json_str)
+        raw = msgspec.json.decode(json_str)
+        if not isinstance(raw, Mapping):
+            raise TypeError("JSON payload must decode to an object mapping")
+        prepared = cls._prepare_payload_for_convert(raw)
+        instance = msgspec.convert(prepared, type=cls)
         return cls._setup_instance(instance)
 
     @classmethod
@@ -223,7 +301,7 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
 
         Args:
             *datasource_args: Datasource instances to execute.
-            **kwargs: Explicit field overrides.
+            **kwargs: Explicit field overrides. Unknown keys are ignored.
 
         Returns:
             Merged mapping ready for ``msgspec.convert``.
@@ -231,7 +309,10 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
         Raises:
             TypeError: If any datasource returns a non-mapping value.
         """
-        merged_data, _ = cls._collect_datasources_payload(*datasource_args, **kwargs)
+        prepared_kwargs = cls._prepare_payload_for_convert(kwargs)
+        merged_data, _ = cls._collect_datasources_payload(
+            *datasource_args, **prepared_kwargs
+        )
         return merged_data
 
     @classmethod
@@ -244,7 +325,8 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
 
         Args:
             *datasource_defs: Datasource template instances bound on the class.
-            **kwargs: Explicit keyword overrides merged after source payloads.
+            **kwargs: Explicit mapped keyword overrides merged after source
+                payloads.
 
         Returns:
             Tuple ``(merged_payload, datasource_instances)`` where
@@ -297,12 +379,13 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
         return json_str
 
     def get_unmapped_payload(self) -> dict[str, Any]:
-        """Return lazily merged unmapped payload fragments from all sources.
+        """Return lazily merged unmapped payload from sources and kwargs.
 
         Returns:
-            Deep-merged mapping of source-level unmapped keys, in source order.
-            A shallow copy is returned so callers cannot mutate the cache
-            directly.
+            Deep-merged mapping of source-level unmapped keys (in source order)
+            plus constructor kwargs that were not recognized by the model.
+            Constructor unmapped keys are merged last. A shallow copy is
+            returned so callers cannot mutate the cache directly.
         """
         cached = getattr(self, "__unmapped_cache__", None)
         if isinstance(cached, dict):
@@ -315,12 +398,20 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
             if isinstance(source_unmapped, Mapping) and source_unmapped:
                 deep_merge_into(merged, source_unmapped)
 
+        constructor_unmapped = getattr(self, "__constructor_unmapped__", None)
+        if isinstance(constructor_unmapped, Mapping) and constructor_unmapped:
+            deep_merge_into(merged, constructor_unmapped)
+
         self.__unmapped_cache__ = merged
         return dict(merged)
 
 
 class DataSource(DataModel):
-    """Base class for configuration sources that emit mapping patches."""
+    """Base class for configuration sources that emit mapping patches.
+
+    Subclasses implement :meth:`load`. Use :meth:`resolve` to run the full
+    source lifecycle (reset, normalize return shape, mapped/unmapped split).
+    """
 
     def _normalize_load_result(
         self,
@@ -391,7 +482,8 @@ class DataSource(DataModel):
             model: Target model type used for key recognition.
 
         Returns:
-            Tuple ``(mapped, unmapped)``.
+            Tuple ``(mapped, unmapped)``. ``mapped`` uses encoded field names
+            when ``model`` provides aliases.
         """
         if model is None:
             return dict(payload), {}
@@ -452,7 +544,8 @@ class DataSource(DataModel):
             model: Optional target model requesting data.
 
         Returns:
-            Model-mapped payload fragment ready for merge.
+            Model-mapped payload fragment ready for merge. When ``model`` is
+            provided, output keys are normalized to encoded field names.
         """
         return self._load(model)
 

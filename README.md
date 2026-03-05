@@ -152,6 +152,10 @@ Notes:
 
 All built-ins are importable from both `msgspec_settings` and `msgspec_settings.sources`.
 
+When a source is used with `resolve(model=...)` (or through `@datasources(...)` on a
+`DataModel`), field resolution accepts both canonical and encoded/alias names, and mapped
+output keys are emitted using encoded names.
+
 ### `TomlSource` and `YamlSource`
 
 - load mappings from files using `msgspec.toml.decode` / `msgspec.yaml.decode`
@@ -205,7 +209,7 @@ Key behavior:
 - explicit nested flags override keys from that JSON
 - unknown CLI args are stored on source runtime state in `__unmapped_kwargs__`
 - set `kebab_case=False` to use dotted long flags (e.g. `--log.level`)
-- CLI generates option aliases on the fly, but values are always mapped to canonical model field names
+- CLI accepts canonical and encoded/alias field names, and maps parsed values to encoded field names
 
 ```python
 src = CliSource(cli_args=["--host", "api", "--unknown-flag"])
@@ -257,7 +261,6 @@ Rationale: sources are deep-cloned per model instantiation, so source-local muta
 
 ## Limitations
 
-- Field aliasing (`msgspec.field(name=...)` or `entry(name=...)`) is not supported by source mapping. Use canonical field names in `DataModel`.
 - Do not shadow `DataModel`/`DataSource` method names with fields; this is user responsibility and can break runtime behavior.
 
 ## DataModel Helpers
@@ -271,7 +274,12 @@ Useful methods:
 - `model_dump_json(indent=...)` for JSON output
 - `model_json_schema(indent=...)` for JSON Schema export
 - `get_datasources_payload(*sources, **kwargs)` to retrieve merged source payloads manually
-- `get_unmapped_payload()` to lazily merge source runtime `__unmapped_kwargs__` in source order
+- `get_unmapped_payload()` to lazily merge source runtime `__unmapped_kwargs__` in source order plus unknown constructor kwargs (merged last)
+
+Notes:
+- `from_data(...)` and `from_json(...)` ignore unknown keys.
+- Unknown keyword arguments passed to `DataModel(...)` are available through
+  `get_unmapped_payload()`.
 
 Example:
 

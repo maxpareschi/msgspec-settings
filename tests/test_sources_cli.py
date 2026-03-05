@@ -192,4 +192,17 @@ def test_alias_option_name_is_accepted(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(sys, "argv", ["prog", "--PORT", "7777"])
     data = CliSource().resolve(model=AliasModel)
-    assert data["port"] == 7777
+    assert data["PORT"] == 7777
+
+
+def test_alias_literal_option_value_is_coerced(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Alias options should preserve Literal coercion behavior."""
+
+    class AliasLiteralModel(msgspec.Struct, kw_only=True):
+        value: Literal[1, 2] = msgspec.field(default=1, name="VALUE")
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--VALUE", "2"])
+    data = CliSource().resolve(model=AliasLiteralModel)
+    assert data["VALUE"] == 2

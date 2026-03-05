@@ -156,3 +156,24 @@ def test_unmapped_api_keys_are_stored_on_source(
 
     assert data == {"host": "api.example.com", "log": {"level": "DEBUG"}}
     assert src.__unmapped_kwargs__ == {"unknown": 1, "log": {"levle": "typo"}}
+
+
+def test_api_alias_fields_are_supported_on_resolve(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Canonical API keys should resolve to alias output paths."""
+
+    class AliasLog(msgspec.Struct, kw_only=True):
+        level: str = msgspec.field(default="INFO", name="LEV")
+
+    class AliasModel(msgspec.Struct, kw_only=True):
+        port: int = msgspec.field(default=8080, name="PORT_NUMBER")
+        log: AliasLog = msgspec.field(default_factory=AliasLog, name="LOGGER")
+
+    def fake_urlopen(request: object, timeout: float) -> _FakeResponse:
+        return _FakeResponse(b'{"port":9000,"log":{"level":"WARN"}}')
+
+    monkeypatch.setattr("msgspec_settings.sources.api.urlopen", fake_urlopen)
+
+    data = APISource(api_url="https://example.test/config").resolve(model=AliasModel)
+    assert data == {"PORT_NUMBER": 9000, "LOGGER": {"LEV": "WARN"}}

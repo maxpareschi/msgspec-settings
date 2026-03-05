@@ -1,6 +1,8 @@
 """Mapping helpers for field resolution and source payload splitting."""
 
 from collections.abc import Mapping
+from functools import lru_cache
+from types import MappingProxyType
 from typing import Any
 
 from msgspec import Struct
@@ -15,6 +17,7 @@ from .typing import (
 )
 
 
+@lru_cache(maxsize=2048)
 def _normalize_token(value: str) -> str:
     """Normalize one lookup token used for key matching.
 
@@ -30,6 +33,50 @@ def _normalize_token(value: str) -> str:
     while "__" in normalized:
         normalized = normalized.replace("__", "_")
     return normalized.strip("_")
+
+
+@lru_cache(maxsize=512)
+def _split_field_lookup(
+    model: type[Struct],
+) -> Mapping[str, tuple[str, type[Struct] | None]]:
+    """Build cached field lookup for payload split operations.
+
+    Args:
+        model: Target model inspected via ``msgspec.structs.fields``.
+
+    Returns:
+        Read-only mapping from accepted input key to
+        ``(encoded_output_key, nested_struct_type)``.
+    """
+    lookup: dict[str, tuple[str, type[Struct] | None]] = {}
+
+    for field_info in struct_fields(model):
+        canonical_name, encoded_name = _field_names(field_info)
+        nested = get_struct_subtype(field_info.type)
+        lookup[canonical_name] = (encoded_name, nested)
+        lookup[encoded_name] = (encoded_name, nested)
+
+    return MappingProxyType(lookup)
+
+
+@lru_cache(maxsize=512)
+def _top_level_split_strategy(model: type[Struct]) -> tuple[frozenset[str], bool]:
+    """Return cached top-level split strategy metadata for one model.
+
+    Args:
+        model: Target model type.
+
+    Returns:
+        Tuple ``(accepted_keys, requires_remap)`` where ``requires_remap`` is
+        true when at least one accepted key maps to a different encoded output
+        key.
+    """
+    lookup = _split_field_lookup(model)
+    accepted_keys = frozenset(lookup.keys())
+    requires_remap = any(
+        output_key != input_key for input_key, (output_key, _) in lookup.items()
+    )
+    return accepted_keys, requires_remap
 
 
 def _field_names(field_info: Any) -> tuple[str, str]:
@@ -55,7 +102,8 @@ def split_mapping_by_model_fields(
     """Split a mapping into model-recognized keys and unmapped keys.
 
     Recognition supports canonical and encoded/aliased field names. Nested
-    mappings recurse only for nested ``Struct`` fields.
+    mappings recurse only for nested ``Struct`` fields. The mapped output
+    always uses encoded field names.
 
     Args:
         payload: Input mapping to split.
@@ -65,13 +113,7 @@ def split_mapping_by_model_fields(
         Tuple ``(mapped, unmapped)`` where ``mapped`` can be safely passed to
         ``msgspec.convert(..., type=model)``.
     """
-    field_lookup: dict[str, type[Struct] | None] = {}
-
-    for field_info in struct_fields(model):
-        canonical_name, alias_name = _field_names(field_info)
-        nested = get_struct_subtype(field_info.type)
-        field_lookup[canonical_name] = nested
-        field_lookup[alias_name] = nested
+    field_lookup = _split_field_lookup(model)
 
     mapped: dict[str, Any] = {}
     unmapped: dict[str, Any] = {}
@@ -81,29 +123,96 @@ def split_mapping_by_model_fields(
         if key not in field_lookup:
             unmapped[key] = value
             continue
-        nested_model = field_lookup[key]
+        output_key, nested_model = field_lookup[key]
 
         if nested_model is not None and isinstance(value, Mapping):
             child_mapped, child_unmapped = split_mapping_by_model_fields(
                 value,
                 nested_model,
             )
-            mapped[key] = child_mapped
+            mapped[output_key] = child_mapped
             if child_unmapped:
-                unmapped[key] = child_unmapped
+                unmapped[output_key] = child_unmapped
             continue
 
-        mapped[key] = value
+        mapped[output_key] = value
 
     return mapped, unmapped
 
 
-def flatten_model_fields_with_alias(
+def split_top_level_mapping_by_model_fields(
+    payload: Mapping[str, Any],
+    model: type[Struct],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Split only top-level keys into mapped and unmapped dictionaries.
+
+    Unlike :func:`split_mapping_by_model_fields`, this helper does not recurse
+    into nested mappings. It is intended for constructor keyword arguments,
+    which are always top-level model keys.
+
+    Args:
+        payload: Input mapping to split.
+        model: Target model used to recognize valid keys.
+
+    Returns:
+        Tuple ``(mapped, unmapped)`` where ``mapped`` uses encoded top-level
+        field names and ``unmapped`` contains unknown top-level keys.
+    """
+    if not payload:
+        return {}, {}
+
+    accepted_keys, requires_remap = _top_level_split_strategy(model)
+
+    if isinstance(payload, dict) and not requires_remap:
+        # Very common path for non-aliased models: return kwargs as-is.
+        if len(payload) == 1:
+            raw_key, value = next(iter(payload.items()))
+            if isinstance(raw_key, str) and raw_key in accepted_keys:
+                return payload, {}
+            key = raw_key if isinstance(raw_key, str) else str(raw_key)
+            return {}, {key: value}
+
+        unknown: dict[str, Any] = {}
+        for raw_key, value in payload.items():
+            if isinstance(raw_key, str) and raw_key in accepted_keys:
+                continue
+            key = raw_key if isinstance(raw_key, str) else str(raw_key)
+            unknown[key] = value
+
+        if not unknown:
+            return payload, {}
+
+        mapped = {
+            key: value
+            for key, value in payload.items()
+            if isinstance(key, str) and key in accepted_keys
+        }
+        return mapped, unknown
+
+    field_lookup = _split_field_lookup(model)
+
+    mapped: dict[str, Any] = {}
+    unmapped: dict[str, Any] = {}
+
+    for raw_key, value in payload.items():
+        key = raw_key if isinstance(raw_key, str) else str(raw_key)
+        resolved = field_lookup.get(key)
+        if resolved is None:
+            unmapped[key] = value
+            continue
+        output_key, _ = resolved
+        mapped[output_key] = value
+
+    return mapped, unmapped
+
+
+@lru_cache(maxsize=512)
+def _flatten_model_fields_with_alias_cached(
     model: type,
     prefix: str = "",
     separator: str = ".",
-) -> dict[str, tuple[str, Any]]:
-    """Flatten leaf model fields to canonical-path metadata.
+) -> tuple[tuple[str, tuple[str, Any]], ...]:
+    """Build and cache flattened leaf fields with canonical/alias paths.
 
     Args:
         model: Root model to inspect.
@@ -111,7 +220,7 @@ def flatten_model_fields_with_alias(
         separator: Path separator.
 
     Returns:
-        Mapping ``canonical_path -> (alias_path, field_type)`` for leaf fields.
+        Immutable tuple of ``(canonical_path, (alias_path, field_type))`` items.
     """
     result: dict[str, tuple[str, Any]] = {}
 
@@ -134,7 +243,51 @@ def flatten_model_fields_with_alias(
             result[canonical_path] = (alias_path, field_info.type)
 
     _walk(model, prefix, prefix)
-    return result
+    return tuple(result.items())
+
+
+def flatten_model_fields_with_alias(
+    model: type,
+    prefix: str = "",
+    separator: str = ".",
+) -> dict[str, tuple[str, Any]]:
+    """Flatten leaf model fields to canonical-path metadata.
+
+    Args:
+        model: Root model to inspect.
+        prefix: Optional traversal prefix.
+        separator: Path separator.
+
+    Returns:
+        Mapping ``canonical_path -> (alias_path, field_type)`` for leaf fields.
+    """
+    return dict(_flatten_model_fields_with_alias_cached(model, prefix, separator))
+
+
+@lru_cache(maxsize=512)
+def _field_token_lookup(
+    model: type,
+) -> Mapping[str, tuple[str, Any, type[Struct] | None]]:
+    """Build cached normalized-token lookup for one model.
+
+    Args:
+        model: Model type to inspect.
+
+    Returns:
+        Read-only mapping from normalized token to
+        ``(encoded_name, field_type, nested_struct_type)``.
+    """
+    lookup: dict[str, tuple[str, Any, type[Struct] | None]] = {}
+
+    for field_info in struct_fields(model):
+        canonical_name, encoded_name = _field_names(field_info)
+        resolved = (encoded_name, field_info.type, get_struct_subtype(field_info.type))
+
+        # Preserve first match in declaration order for deterministic behavior.
+        lookup.setdefault(_normalize_token(canonical_name), resolved)
+        lookup.setdefault(_normalize_token(encoded_name), resolved)
+
+    return MappingProxyType(lookup)
 
 
 def _lookup_field_by_token(
@@ -148,44 +301,36 @@ def _lookup_field_by_token(
         token: Candidate field token.
 
     Returns:
-        Tuple ``(canonical_name, field_type, nested_struct_type)`` when a field
+        Tuple ``(encoded_name, field_type, nested_struct_type)`` when a field
         matches, otherwise ``None``.
     """
     normalized = _normalize_token(token)
-    for field_info in struct_fields(model):
-        canonical_name, alias_name = _field_names(field_info)
-        if normalized not in {
-            _normalize_token(canonical_name),
-            _normalize_token(alias_name),
-        }:
-            continue
-        return canonical_name, field_info.type, get_struct_subtype(field_info.type)
-    return None
+    return _field_token_lookup(model).get(normalized)
 
 
 def _resolve_segments(model: type, segments: list[str]) -> tuple[str, Any] | None:
-    """Resolve explicit key segments to a canonical dotted field path.
+    """Resolve explicit key segments to an encoded dotted field path.
 
     Args:
         model: Root model to traverse.
         segments: Pre-split key segments.
 
     Returns:
-        Tuple ``(canonical_path, field_type)`` on success, otherwise ``None``.
+        Tuple ``(encoded_path, field_type)`` on success, otherwise ``None``.
     """
     current_model = model
-    canonical_parts: list[str] = []
+    encoded_parts: list[str] = []
 
     for index, segment in enumerate(segments):
         resolved = _lookup_field_by_token(current_model, segment)
         if resolved is None:
             return None
 
-        canonical_name, field_type, nested = resolved
-        canonical_parts.append(canonical_name)
+        encoded_name, field_type, nested = resolved
+        encoded_parts.append(encoded_name)
 
         if index == len(segments) - 1:
-            return ".".join(canonical_parts), field_type
+            return ".".join(encoded_parts), field_type
         if nested is None:
             return None
         current_model = nested
@@ -198,24 +343,26 @@ def _match_env_parts_underscore(
     model: type,
     prefix: str = "",
 ) -> tuple[str, Any] | None:
-    """Resolve underscore-delimited key parts using greedy matching.
+    """Resolve underscore-delimited key parts using longest-first matching.
 
     Args:
         parts: Key tokens split on ``_``.
         model: Model used for path resolution.
-        prefix: Current canonical dotted prefix during recursion.
+        prefix: Current encoded dotted prefix during recursion.
 
     Returns:
-        Tuple ``(canonical_path, field_type)`` on success, otherwise ``None``.
+        Tuple ``(encoded_path, field_type)`` on success, otherwise ``None``.
     """
-    for i in range(1, len(parts) + 1):
+    # Prefer exact/longer token matches before shorter prefix matches to avoid
+    # ambiguous routing (for example LOG_LEVEL -> LOG.level when LOG_LEVEL exists).
+    for i in range(len(parts), 0, -1):
         token = "_".join(parts[:i])
         resolved = _lookup_field_by_token(model, token)
         if resolved is None:
             continue
 
-        canonical_name, field_type, nested = resolved
-        full_path = f"{prefix}.{canonical_name}" if prefix else canonical_name
+        encoded_name, field_type, nested = resolved
+        full_path = f"{prefix}.{encoded_name}" if prefix else encoded_name
         remaining = parts[i:]
 
         if not remaining:
@@ -239,8 +386,11 @@ def map_env_to_model(
 ) -> dict[str, Any] | tuple[dict[str, Any], dict[str, str]]:
     """Map filtered env-like key/value pairs to model-shaped nested data.
 
+    Field resolution accepts both canonical and encoded/alias field names.
+    Output keys are emitted using encoded field names.
+
     Args:
-        filtered: Uppercased env keys with prefix already removed.
+        filtered: Uppercased env keys with source prefix already removed.
         model: Target model type.
         separator: Nested key separator (for example ``"_"`` or ``"__"``).
         collect_unmatched: When true, also return unmatched key/value pairs.
@@ -312,4 +462,5 @@ __all__ = (
     "flatten_model_fields_with_alias",
     "map_env_to_model",
     "split_mapping_by_model_fields",
+    "split_top_level_mapping_by_model_fields",
 )
