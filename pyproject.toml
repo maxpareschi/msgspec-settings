@@ -1,0 +1,48 @@
+[project]
+name = "msgspec-settings"
+version = "0.1.0"
+description = "An Options library using msgspec as a backend for validation and serialization."
+readme = "README.md"
+requires-python = ">=3.13"
+
+keywords = ["Settings", "CLI", "Configuration", "Validation", "Serialization", "msgspec"]
+authors = [
+    {name = "Massimiliano Pareschi", email = "max.pareschi@gmail.com"}
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Application Frameworks :: Click",
+    "Topic :: Software Development :: Libraries :: Application Frameworks :: Rich",
+]
+
+dependencies = [
+    "msgspec>=0.20.0",
+    "pyyaml>=6.0.3",
+    "rich>=14.3.1",
+    "rich-click>=1.9.6",
+]
+
+[dependency-groups]
+dev = [
+    "pyinstrument>=5.1.2",
+    "pytest>=9.0.2",
+    "ruff>=0.14.14",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["msgspec_settings", "msgspec_settings.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
