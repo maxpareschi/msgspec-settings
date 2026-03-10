@@ -7,7 +7,7 @@ import msgspec
 import pytest
 from msgspec import Meta
 
-from msgspec_config import CliSource
+from msgspec_config import CliSource, DataModel, entry
 from msgspec_config.sources import cli as _cli_mod
 
 from ._models import (
@@ -206,3 +206,177 @@ def test_alias_literal_option_value_is_coerced(
     monkeypatch.setattr(sys, "argv", ["prog", "--VALUE", "2"])
     data = CliSource().resolve(model=AliasLiteralModel)
     assert data["VALUE"] == 2
+
+
+def test_entry_cli_flag_overrides_auto_long_generation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """entry(..., cli_flag=...) should replace generated long option names."""
+
+    class CustomFlagModel(DataModel):
+        host: str = entry("localhost", cli_flag="server-host")
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--server-host", "api"])
+    assert CliSource().resolve(model=CustomFlagModel)["host"] == "api"
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--host", "legacy"])
+    src = CliSource()
+    assert src.resolve(model=CustomFlagModel) == {}
+    assert src.__unmapped_kwargs__["host"] == "legacy"
+
+
+def test_cli_autogenerate_false_excludes_unset_fields(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """autogenerate=False should skip fields without explicit CLI metadata."""
+
+    class AutoDisabledModel(DataModel):
+        host: str = entry("localhost")
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--host", "api"])
+    src = CliSource(autogenerate=False)
+    assert src.resolve(model=AutoDisabledModel) == {}
+    assert src.__unmapped_kwargs__["host"] == "api"
+
+
+def test_entry_cli_true_includes_field_when_autogenerate_false(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """entry(..., cli=True) should include field even when autogen is off."""
+
+    class ForcedCliModel(DataModel):
+        host: str = entry("localhost", cli=True)
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--host", "api"])
+    assert CliSource(autogenerate=False).resolve(model=ForcedCliModel)["host"] == "api"
+
+    monkeypatch.setattr(sys, "argv", ["prog", "-h", "api"])
+    src = CliSource(autogenerate=False)
+    assert src.resolve(model=ForcedCliModel) == {}
+    assert src.__unmapped_kwargs__["h"] == "api"
+
+
+def test_entry_cli_false_excludes_field_even_with_custom_flags(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """entry(..., cli=False) should suppress all CLI declarations for the field."""
+
+    class DisabledCliModel(DataModel):
+        host: str = entry("localhost", cli=False, cli_flag="server-host")
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--host", "api"])
+    src = CliSource()
+    assert src.resolve(model=DisabledCliModel) == {}
+    assert src.__unmapped_kwargs__["host"] == "api"
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--server-host", "api"])
+    src = CliSource()
+    assert src.resolve(model=DisabledCliModel) == {}
+    assert src.__unmapped_kwargs__["server-host"] == "api"
+
+
+def test_entry_cli_flag_allows_opt_in_when_autogenerate_false(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Explicit cli_flag should opt the field in when autogenerate=False."""
+
+    class OptInLongModel(DataModel):
+        host: str = entry("localhost", cli_flag="server-host")
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--server-host", "api"])
+    assert CliSource(autogenerate=False).resolve(model=OptInLongModel)["host"] == "api"
+
+
+def test_entry_cli_short_flag_allows_opt_in_when_autogenerate_false(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Explicit cli_short_flag should opt the field in when autogenerate=False."""
+
+    class OptInShortModel(DataModel):
+        host: str = entry("localhost", cli_short_flag="H")
+
+    monkeypatch.setattr(sys, "argv", ["prog", "-H", "api"])
+    assert CliSource(autogenerate=False).resolve(model=OptInShortModel)["host"] == "api"
+
+
+def test_entry_cli_short_flag_overrides_auto_short_generation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """entry(..., cli_short_flag=...) should replace auto short assignment."""
+
+    class CustomShortModel(DataModel):
+        host: str = entry("localhost", cli_short_flag="H")
+
+    monkeypatch.setattr(sys, "argv", ["prog", "-H", "api"])
+    assert CliSource().resolve(model=CustomShortModel)["host"] == "api"
+
+    monkeypatch.setattr(sys, "argv", ["prog", "-h", "legacy"])
+    src = CliSource()
+    assert src.resolve(model=CustomShortModel) == {}
+    assert src.__unmapped_kwargs__["h"] == "legacy"
+
+
+def test_entry_cli_false_disables_bool_positive_and_negative_flags(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """cli=False bool fields should not expose --field nor --no-field options."""
+
+    class DisabledBoolModel(DataModel):
+        debug: bool = entry(False, cli=False)
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--debug"])
+    src = CliSource()
+    assert src.resolve(model=DisabledBoolModel) == {}
+    assert src.__unmapped_kwargs__["debug"] is True
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--no-debug"])
+    src = CliSource()
+    assert src.resolve(model=DisabledBoolModel) == {}
+    assert src.__unmapped_kwargs__["no-debug"] is True
+
+
+def test_entry_cli_false_disables_struct_json_and_nested_flags(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """cli=False on top-level struct should suppress JSON and nested CLI flags."""
+
+    class DisabledStructModel(DataModel):
+        log: Annotated[LogModel, Meta(extra_json_schema={"cli": False})] = (
+            msgspec.field(default_factory=LogModel)
+        )
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["prog", "--log", '{"level":"DEBUG"}', "--log-level", "WARN"],
+    )
+    src = CliSource()
+    assert src.resolve(model=DisabledStructModel) == {}
+    assert src.__unmapped_kwargs__["log"] == '{"level":"DEBUG"}'
+    assert src.__unmapped_kwargs__["log-level"] == "WARN"
+
+
+def test_entry_cli_metadata_type_is_validated(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Invalid cli metadata should raise a descriptive TypeError."""
+
+    class InvalidCliModel(DataModel):
+        host: str = entry("localhost", cli="yes")  # type: ignore[arg-type]
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--host", "api"])
+    with pytest.raises(TypeError, match="cli must be bool or None"):
+        CliSource().resolve(model=InvalidCliModel)
+
+
+def test_entry_cli_flag_metadata_type_is_validated(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Invalid cli_flag metadata should raise a descriptive TypeError."""
+
+    class InvalidFlagModel(DataModel):
+        host: str = entry("localhost", cli_flag=123)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(sys, "argv", ["prog", "--host", "api"])
+    with pytest.raises(TypeError, match="cli_flag must be a string"):
+        CliSource().resolve(model=InvalidFlagModel)

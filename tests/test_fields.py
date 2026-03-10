@@ -104,6 +104,9 @@ def test_entry_custom_schema_kwargs_are_mapped_to_extra_json_schema() -> None:
             disabled_if="readonly",
             parent_group="network",
             ui_component="slider",
+            cli=True,
+            cli_flag="server-port",
+            cli_short_flag="P",
         )
 
     ann = Model.__annotations__["port"]
@@ -116,6 +119,9 @@ def test_entry_custom_schema_kwargs_are_mapped_to_extra_json_schema() -> None:
     assert extra_json_schema.get("disabled_if") == "readonly"
     assert extra_json_schema.get("parent_group") == "network"
     assert extra_json_schema.get("ui_component") == "slider"
+    assert extra_json_schema.get("cli") is True
+    assert extra_json_schema.get("cli_flag") == "server-port"
+    assert extra_json_schema.get("cli_short_flag") == "P"
 
 
 def test_entry_mutable_default_with_meta() -> None:

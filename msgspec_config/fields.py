@@ -3,6 +3,8 @@
 This module provides:
 
 - ``entry(...)``: field declaration helper with optional ``msgspec.Meta`` kwargs
+- ``entry(...)`` extra schema keys: ``hidden_if``, ``disabled_if``,
+  ``parent_group``, ``ui_component``, ``cli``, ``cli_flag``, ``cli_short_flag``
 - ``group(...)``: grouped object/list/dict declaration helper
 - ``apply_entry_defaults(...)``: metaclass rewrite pass used by ``DataModelMeta``
 """
@@ -14,7 +16,15 @@ from typing import Annotated, Any, get_args, get_origin
 from msgspec import NODEFAULT, Meta, field
 
 ENTRY_EXTRA_SCHEMA_PARAMS: frozenset[str] = frozenset(
-    {"hidden_if", "disabled_if", "parent_group", "ui_component"}
+    {
+        "hidden_if",
+        "disabled_if",
+        "parent_group",
+        "ui_component",
+        "cli",
+        "cli_flag",
+        "cli_short_flag",
+    }
 )
 GROUP_DISALLOWED_OBJECT_TYPES: frozenset[type[Any]] = frozenset(
     {
@@ -107,7 +117,11 @@ def _build_entry_meta(meta_kwargs: dict[str, Any]) -> Meta:
     """Build a ``Meta`` instance from ``entry(...)`` keyword arguments.
 
     Args:
-        meta_kwargs: Meta kwargs supplied to ``entry``.
+        meta_kwargs: ``entry(...)`` keyword arguments. ``msgspec.Meta``
+            parameters are forwarded directly. Extra keys
+            (``hidden_if``, ``disabled_if``, ``parent_group``,
+            ``ui_component``, ``cli``, ``cli_flag``,
+            ``cli_short_flag``) are merged into ``Meta.extra_json_schema``.
 
     Returns:
         Constructed ``Meta`` object.
@@ -124,7 +138,8 @@ def _build_entry_meta(meta_kwargs: dict[str, Any]) -> Meta:
         raise TypeError(
             "entry() received unsupported kwargs: "
             f"{', '.join(sorted(unknown))}. Allowed kwargs are msgspec.Meta "
-            "parameters plus hidden_if, disabled_if, parent_group, ui_component."
+            "parameters plus hidden_if, disabled_if, parent_group, ui_component, "
+            "cli, cli_flag, cli_short_flag."
         )
 
     known = {k: v for k, v in meta_kwargs.items() if k in META_PARAMS}
@@ -184,7 +199,11 @@ def entry(value: Any = NODEFAULT, *, name: str | None = None, **kwargs: Any) -> 
     Args:
         value: Field default value.
         name: Optional encoded field name (``msgspec.field(name=...)``).
-        **kwargs: ``msgspec.Meta`` arguments plus supported UI schema keys.
+        **kwargs: ``msgspec.Meta`` arguments plus extra schema keys
+            (``hidden_if``, ``disabled_if``, ``parent_group``,
+            ``ui_component``), CLI include/exclude key (``cli``), and CLI
+            override keys (``cli_flag``, ``cli_short_flag``). Extra keys are
+            stored under ``Meta.extra_json_schema``.
 
     Returns:
         ``msgspec.field`` output or an ``EntryInfo`` sentinel.

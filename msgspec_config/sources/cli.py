@@ -1,8 +1,9 @@
 """CLI-backed data source implementation."""
 
+from collections.abc import Mapping
 from pathlib import Path
 import sys
-from typing import Any, Literal, get_args, get_origin
+from typing import Annotated, Any, Literal, get_args, get_origin
 
 import msgspec
 import rich_click as click
@@ -101,6 +102,176 @@ def _assign_short(long_flag: str, reserved: set[str], assigned: set[str]) -> str
     return None
 
 
+def _normalize_custom_long_flag(value: Any, dotted_path: str) -> str | None:
+    """Normalize one metadata-provided long flag name.
+
+    Args:
+        value: Metadata value from ``cli_flag``.
+        dotted_path: Field path for error messages.
+
+    Returns:
+        Normalized long flag (``--...``), or ``None`` when unset.
+
+    Raises:
+        TypeError: If ``value`` is not a valid long flag token.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise TypeError(
+            f"{dotted_path}: cli_flag must be a string, got {type(value).__name__}"
+        )
+
+    token = value.strip()
+    if not token:
+        raise TypeError(f"{dotted_path}: cli_flag cannot be empty")
+    if any(char.isspace() for char in token):
+        raise TypeError(f"{dotted_path}: cli_flag cannot contain whitespace")
+
+    if token.startswith("--"):
+        return token
+    if token.startswith("-"):
+        raise TypeError(
+            f"{dotted_path}: cli_flag must be provided without '-' or with '--'"
+        )
+    return "--" + token
+
+
+def _normalize_custom_short_flag(value: Any, dotted_path: str) -> str | None:
+    """Normalize one metadata-provided short flag token.
+
+    Args:
+        value: Metadata value from ``cli_short_flag``.
+        dotted_path: Field path for error messages.
+
+    Returns:
+        Short token without leading ``-``, or ``None`` when unset.
+
+    Raises:
+        TypeError: If ``value`` is not a valid short flag token.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise TypeError(
+            f"{dotted_path}: cli_short_flag must be a string, got "
+            f"{type(value).__name__}"
+        )
+
+    token = value.strip()
+    if not token:
+        raise TypeError(f"{dotted_path}: cli_short_flag cannot be empty")
+    if any(char.isspace() for char in token):
+        raise TypeError(f"{dotted_path}: cli_short_flag cannot contain whitespace")
+    if token.startswith("--"):
+        raise TypeError(f"{dotted_path}: cli_short_flag must not start with '--'")
+    if token.startswith("-"):
+        token = token[1:]
+    if not token or token.startswith("-"):
+        raise TypeError(f"{dotted_path}: cli_short_flag is invalid")
+    return token
+
+
+def _normalize_custom_cli_enabled(value: Any, dotted_path: str) -> bool | None:
+    """Normalize one metadata-provided CLI include/exclude marker.
+
+    Args:
+        value: Metadata value from ``cli``.
+        dotted_path: Field path for error messages.
+
+    Returns:
+        ``True``/``False`` when configured, otherwise ``None``.
+
+    Raises:
+        TypeError: If ``value`` is not ``bool`` or ``None``.
+    """
+    if value is None:
+        return None
+    if type(value) is not bool:
+        raise TypeError(
+            f"{dotted_path}: cli must be bool or None, got {type(value).__name__}"
+        )
+    return value
+
+
+def _extract_custom_cli_metadata(
+    field_type: Any,
+    dotted_path: str,
+) -> tuple[bool | None, str | None, str | None]:
+    """Extract custom CLI declarations from ``Annotated[..., Meta(...)]``.
+
+    Args:
+        field_type: Field annotation, potentially wrapped in ``Annotated``.
+        dotted_path: Field path for error messages.
+
+    Returns:
+        Tuple ``(cli, cli_flag, cli_short_flag)``.
+    """
+    annotation = field_type
+    custom_enabled: Any = None
+    custom_long: Any = None
+    custom_short: Any = None
+
+    while get_origin(annotation) is Annotated:
+        args = get_args(annotation)
+        if not args:
+            break
+        for meta_item in args[1:]:
+            if not isinstance(meta_item, msgspec.Meta):
+                continue
+            extra_json_schema = getattr(meta_item, "extra_json_schema", None)
+            if not isinstance(extra_json_schema, Mapping):
+                continue
+            if "cli" in extra_json_schema:
+                custom_enabled = extra_json_schema.get("cli")
+            if "cli_flag" in extra_json_schema:
+                custom_long = extra_json_schema.get("cli_flag")
+            if "cli_short_flag" in extra_json_schema:
+                custom_short = extra_json_schema.get("cli_short_flag")
+        annotation = args[0]
+
+    return (
+        _normalize_custom_cli_enabled(custom_enabled, dotted_path),
+        _normalize_custom_long_flag(custom_long, dotted_path),
+        _normalize_custom_short_flag(custom_short, dotted_path),
+    )
+
+
+def _should_include_field(
+    autogenerate: bool,
+    custom_enabled: bool | None,
+    custom_long: str | None,
+    custom_short: str | None,
+) -> bool:
+    """Resolve whether one field should emit CLI declarations."""
+    if custom_enabled is False:
+        return False
+    if custom_enabled is True:
+        return True
+    if custom_long is not None or custom_short is not None:
+        return True
+    return autogenerate
+
+
+def _reserve_short(
+    short: str,
+    reserved: set[str],
+    assigned: set[str],
+    dotted_path: str,
+) -> str:
+    """Reserve one explicit short token and detect collisions."""
+    if short in reserved:
+        raise TypeError(
+            f"CLI short option collision: '{short}' on '{dotted_path}' is reserved"
+        )
+    if short in assigned:
+        raise TypeError(
+            f"CLI short option collision: '{short}' on '{dotted_path}' is already used"
+        )
+    assigned.add(short)
+    return short
+
+
 def _merge_unmapped_option(unmapped: dict[str, Any], key: str, value: Any) -> None:
     """Store one parsed unknown option, preserving repeated occurrences.
 
@@ -193,11 +364,24 @@ class CliSource(DataSource):
 
     Attributes:
         cli_args: Optional argument list. Uses ``sys.argv[1:]`` when unset.
+        autogenerate: Emit generated options for fields without explicit CLI
+            metadata when true.
         kebab_case: Use kebab-case long flags when true.
         theme: Rich-click theme name passed via context settings.
+
+    Notes:
+        CLI declarations are generated from model fields and aliases.
+        Per-field behavior can be controlled via
+        ``entry(..., cli=..., cli_flag=..., cli_short_flag=...)`` metadata.
+        Precedence is:
+        - ``cli=False``: exclude field.
+        - ``cli=True``: include field.
+        - explicit ``cli_flag``/``cli_short_flag``: include field.
+        - otherwise include based on ``autogenerate``.
     """
 
     cli_args: list[str] | None = None
+    autogenerate: bool = True
     kebab_case: bool = True
     theme: str = "cargo-slim"
 
@@ -216,6 +400,10 @@ class CliSource(DataSource):
             - tuple ``(mapped, unmapped)`` when unknown CLI args are present.
             Mapped keys use encoded field names so payloads can be passed
             directly to ``msgspec.convert`` for aliased models.
+            Field inclusion is controlled by ``autogenerate`` and per-field
+            ``cli`` metadata. ``cli_flag`` and ``cli_short_flag`` override
+            emitted declarations for included fields. Automatic short-flag
+            assignment is applied only when ``autogenerate=True``.
 
         Raises:
             TypeError: On generated option-name collisions.
@@ -238,6 +426,7 @@ class CliSource(DataSource):
         params: list[click.Parameter] = []
         param_to_path: dict[str, str] = {}
         decl_to_path: dict[str, str] = {}
+        primary_long_flag_by_path: dict[str, str] = {}
         bool_neg_map: dict[str, str] = {}
         json_struct_params: dict[str, str] = {}
         use_kebab = self.kebab_case
@@ -263,15 +452,28 @@ class CliSource(DataSource):
                 )
             decl_to_path[decl] = dotted_path
 
-        # Collect top-level Struct fields to expose JSON options.
-        struct_field_names: dict[str, tuple[str, str]] = {}
+        # Collect top-level Struct fields to expose JSON options and policy.
+        struct_field_names: dict[
+            str,
+            tuple[str, str, Any, bool | None, str | None, str | None],
+        ] = {}
         for field_info in struct_fields(model):
             if get_struct_subtype(field_info.type) is None:
                 continue
             encode_name = getattr(field_info, "encode_name", field_info.name)
             if not isinstance(encode_name, str) or not encode_name:
                 encode_name = field_info.name
-            struct_field_names[field_info.name] = (field_info.name, encode_name)
+            custom_enabled, custom_long, custom_short = _extract_custom_cli_metadata(
+                field_info.type, field_info.name
+            )
+            struct_field_names[field_info.name] = (
+                field_info.name,
+                encode_name,
+                field_info.type,
+                custom_enabled,
+                custom_long,
+                custom_short,
+            )
 
         emitted_json_opts: set[str] = set()
 
@@ -296,42 +498,94 @@ class CliSource(DataSource):
 
             if top_field in struct_field_names and top_field not in emitted_json_opts:
                 emitted_json_opts.add(top_field)
-                _, top_alias = struct_field_names[top_field]
-
-                top_long_flags = [_make_flag_name(top_field, kebab_case=use_kebab)]
-                alias_top_flag = _make_flag_name(top_alias, kebab_case=use_kebab)
-                if alias_top_flag not in top_long_flags:
-                    top_long_flags.append(alias_top_flag)
-                top_long_flags = dedupe_keep_order(top_long_flags)
-
-                json_param_name = top_field.replace(".", "_").replace("-", "_")
-                json_struct_params[json_param_name] = top_alias
-                json_decls = list(top_long_flags)
-                if not use_kebab:
-                    json_decls.append(json_param_name)
-                json_decls = dedupe_keep_order(json_decls)
-
-                short = _assign_short(top_long_flags[0], reserved_short, assigned_short)
-                if short is not None:
-                    json_decls.insert(0, "-" + short)
-
-                for decl in json_decls:
-                    if decl.startswith("-"):
-                        _register_decl(decl, top_field)
-
-                params.append(
-                    click.Option(
-                        param_decls=json_decls,
-                        type=click.STRING,
-                        help="JSON string",
-                    )
+                (
+                    _,
+                    top_alias,
+                    _,
+                    top_custom_enabled,
+                    top_custom_long,
+                    top_custom_short,
+                ) = struct_field_names[top_field]
+                include_top_json = _should_include_field(
+                    self.autogenerate,
+                    top_custom_enabled,
+                    top_custom_long,
+                    top_custom_short,
                 )
+                if include_top_json:
+                    if top_custom_long is not None:
+                        top_long_flags = [top_custom_long]
+                    else:
+                        top_long_flags = [
+                            _make_flag_name(top_field, kebab_case=use_kebab)
+                        ]
+                        alias_top_flag = _make_flag_name(
+                            top_alias, kebab_case=use_kebab
+                        )
+                        if alias_top_flag not in top_long_flags:
+                            top_long_flags.append(alias_top_flag)
+                        top_long_flags = dedupe_keep_order(top_long_flags)
 
-            long_flags = [_make_flag_name(dotted_path, kebab_case=use_kebab)]
-            alias_flag = _make_flag_name(alias_path, kebab_case=use_kebab)
-            if alias_flag not in long_flags:
-                long_flags.append(alias_flag)
-            long_flags = dedupe_keep_order(long_flags)
+                    json_param_name = top_field.replace(".", "_").replace("-", "_")
+                    json_struct_params[json_param_name] = top_alias
+                    json_decls = list(top_long_flags)
+                    json_decls.append(json_param_name)
+                    json_decls = dedupe_keep_order(json_decls)
+
+                    if top_custom_short is not None:
+                        short = _reserve_short(
+                            top_custom_short,
+                            reserved_short,
+                            assigned_short,
+                            top_field,
+                        )
+                    elif self.autogenerate:
+                        short = _assign_short(
+                            top_long_flags[0], reserved_short, assigned_short
+                        )
+                    else:
+                        short = None
+                    if short is not None:
+                        json_decls.insert(0, "-" + short)
+
+                    for decl in json_decls:
+                        if decl.startswith("-"):
+                            _register_decl(decl, top_field)
+
+                    params.append(
+                        click.Option(
+                            param_decls=json_decls,
+                            type=click.STRING,
+                            help="JSON string",
+                        )
+                    )
+
+            top_struct = struct_field_names.get(top_field)
+            if top_struct is not None:
+                _, _, _, top_custom_enabled, _, _ = top_struct
+                if top_custom_enabled is False:
+                    continue
+
+            custom_enabled, custom_long, custom_short = _extract_custom_cli_metadata(
+                field_type, dotted_path
+            )
+            include_leaf = _should_include_field(
+                self.autogenerate,
+                custom_enabled,
+                custom_long,
+                custom_short,
+            )
+            if not include_leaf:
+                continue
+
+            if custom_long is not None:
+                long_flags = [custom_long]
+            else:
+                long_flags = [_make_flag_name(dotted_path, kebab_case=use_kebab)]
+                alias_flag = _make_flag_name(alias_path, kebab_case=use_kebab)
+                if alias_flag not in long_flags:
+                    long_flags.append(alias_flag)
+                long_flags = dedupe_keep_order(long_flags)
 
             param_name = dotted_path.replace(".", "_").replace("-", "_")
             existing_path = param_to_path.get(param_name)
@@ -341,6 +595,8 @@ class CliSource(DataSource):
                     f"'{alias_path}' both map to '{param_name}'"
                 )
             param_to_path[param_name] = alias_path
+            primary_long_flag_by_path[dotted_path] = long_flags[0]
+            primary_long_flag_by_path[alias_path] = long_flags[0]
 
             for decl in long_flags:
                 _register_decl(decl, dotted_path)
@@ -350,9 +606,16 @@ class CliSource(DataSource):
 
             if is_bool_flag:
                 pos_decls = list(long_flags)
-                if not use_kebab:
-                    pos_decls.append(param_name)
-                if "." not in dotted_path:
+                pos_decls.append(param_name)
+                if custom_short is not None:
+                    short = _reserve_short(
+                        custom_short,
+                        reserved_short,
+                        assigned_short,
+                        dotted_path,
+                    )
+                    pos_decls.insert(0, "-" + short)
+                elif self.autogenerate and "." not in dotted_path:
                     short = _assign_short(long_flags[0], reserved_short, assigned_short)
                     if short is not None:
                         pos_decls.insert(0, "-" + short)
@@ -375,8 +638,7 @@ class CliSource(DataSource):
                 bool_neg_map[neg_param_name] = alias_path
 
                 neg_decls = [f"--no-{flag[2:]}" for flag in long_flags]
-                if not use_kebab:
-                    neg_decls.append(neg_param_name)
+                neg_decls.append(neg_param_name)
                 neg_decls = dedupe_keep_order(neg_decls)
                 for decl in neg_decls:
                     _register_decl(decl, dotted_path)
@@ -394,9 +656,16 @@ class CliSource(DataSource):
             click_kwargs["required"] = False
 
             decls = list(long_flags)
-            if not use_kebab:
-                decls.append(param_name)
-            if "." not in dotted_path:
+            decls.append(param_name)
+            if custom_short is not None:
+                short = _reserve_short(
+                    custom_short,
+                    reserved_short,
+                    assigned_short,
+                    dotted_path,
+                )
+                decls.insert(0, "-" + short)
+            elif self.autogenerate and "." not in dotted_path:
                 short = _assign_short(long_flags[0], reserved_short, assigned_short)
                 if short is not None:
                     decls.insert(0, "-" + short)
@@ -478,9 +747,13 @@ class CliSource(DataSource):
                 coerced = coerce_env_value(value, field_type)
                 if coerced is _COERCE_FAILED and get_origin(unwrapped) is Literal:
                     allowed = ", ".join(repr(item) for item in get_args(unwrapped))
+                    param_hint = primary_long_flag_by_path.get(
+                        dotted_path,
+                        _make_flag_name(dotted_path, kebab_case=use_kebab),
+                    )
                     raise click.BadParameter(
                         f"invalid literal value {value!r}; allowed values: {allowed}",
-                        param_hint=_make_flag_name(dotted_path, kebab_case=use_kebab),
+                        param_hint=param_hint,
                     )
                 if coerced is not _COERCE_FAILED:
                     value = coerced

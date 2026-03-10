@@ -1,6 +1,6 @@
 
 <p align="center">
-    <img src="docs/assets/msgspec-config-logo.svg" width="35%" alt="msgspec-config">
+    <img src="https://github.com/maxpareschi/msgspec-config/blob/master/docs/assets/msgspec-config-logo.svg" width="35%" alt="msgspec-config">
 </p>
 
 # msgspec-config
@@ -116,6 +116,8 @@ Why it exists:
 - attaches `msgspec.Meta(...)` constraints directly from field declaration
 - converts mutable defaults (`list`, `dict`, `set`) into factories automatically
 - supports extra UI/schema keys: `hidden_if`, `disabled_if`, `parent_group`, `ui_component`
+- supports CLI include/exclude key: `cli` (`True` include, `False` exclude)
+- supports CLI override keys: `cli_flag`, `cli_short_flag`
 
 ```python
 from msgspec_config import DataModel, entry
@@ -206,20 +208,30 @@ EnvironSource(env_prefix="APP", nested_separator="__")
 Generates options from model fields (including nested fields).
 
 Key behavior:
+- `autogenerate=True` (default): fields are exposed automatically
+- `autogenerate=False`: only fields explicitly opted in via metadata are exposed
 - nested fields become flags like `--log-level`
 - bools support both positive and negative forms: `--debug` / `--no-debug`
 - nested struct fields also accept JSON on the top-level flag:
   - `--log '{"level":"DEBUG"}'`
 - explicit nested flags override keys from that JSON
+- `entry(..., cli=False)` excludes a field from CLI generation
+- `entry(..., cli=True)` force-includes a field when `autogenerate=False`
+- `entry(..., cli_flag=..., cli_short_flag=...)` overrides generated option names for that field
 - unknown CLI args are stored on source runtime state in `__unmapped_kwargs__`
 - set `kebab_case=False` to use dotted long flags (e.g. `--log.level`)
 - CLI accepts canonical and encoded/alias field names, and maps parsed values to encoded field names
 
+Field policy precedence:
+- `cli=False`: field is excluded
+- `cli=True`: field is included
+- `cli_flag` / `cli_short_flag` present: field is included
+- otherwise inclusion follows `autogenerate`
+
 ```python
-src = CliSource(cli_args=["--host", "api", "--unknown-flag"])
+src = CliSource(autogenerate=False, cli_args=["--server-host", "api"])
 data = src.resolve(model=AppConfig)
-print(data)  # {"host": "api"}
-print(src.__unmapped_kwargs__)  # {"unknown-flag": True}
+print(data)
 ```
 
 ### `APISource`
