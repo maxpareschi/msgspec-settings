@@ -1,6 +1,6 @@
 [project]
 name = "msgspec-config"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Settings library using msgspec as a backend for validation and serialization."
 readme = "README.md"
 requires-python = ">=3.11"
