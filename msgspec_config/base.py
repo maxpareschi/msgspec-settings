@@ -75,6 +75,7 @@ class DataModelMeta(msgspec.StructMeta):
             "__constructor_unmapped__",
             "__unmapped_cache__",
             "__unmapped_kwargs__",
+            "__raw_argv__",
         }
 
         for attr in reserved_attributes:
@@ -109,8 +110,9 @@ class DataModelMeta(msgspec.StructMeta):
                 :meth:`DataModel.get_unmapped_payload`.
 
         Returns:
-            Validated model instance with runtime datasource and unmapped state
-            attached.
+            Validated model instance with runtime datasource state attached,
+            including unmapped payload tracking and raw argv fragments produced
+            by sources.
 
         Raises:
             TypeError: If positional arguments are provided.
@@ -148,6 +150,8 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
     ``DataModel`` instances may be built from ordered datasource patches plus
     constructor keyword overrides. Source-level unmapped values and unknown
     constructor kwargs can be inspected with :meth:`get_unmapped_payload`.
+    Raw argv leftovers produced by CLI-aware sources can be inspected with
+    :meth:`get_raw_argv`.
     """
 
     __json_encoder__: ClassVar[msgspec.json.Encoder] = get_json_encoder()
@@ -212,7 +216,7 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
         unmapped_cache: dict[str, Any] | None = None,
         constructor_unmapped: Mapping[str, Any] | None = None,
     ) -> "DataModel":
-        """Attach runtime datasource and unmapped state to one instance.
+        """Attach runtime datasource, unmapped, and raw-argv state.
 
         Args:
             instance: Model instance to mutate.
@@ -225,6 +229,8 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
 
         Returns:
             Same ``instance`` with runtime attributes initialized.
+            ``__raw_argv__`` is populated by concatenating per-source raw argv
+            fragments in source evaluation order.
         """
         if datasource_instances is None:
             datasource_instances = ()
@@ -233,6 +239,14 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
         instance.__constructor_unmapped__ = (
             constructor_unmapped if constructor_unmapped is not None else {}
         )
+        raw_argv: list[str] = []
+        for datasource in datasource_instances:
+            source_raw_argv = getattr(datasource, "__raw_argv__", None)
+            if isinstance(source_raw_argv, list):
+                raw_argv.extend(
+                    item for item in source_raw_argv if isinstance(item, str)
+                )
+        instance.__raw_argv__ = raw_argv
         return instance
 
     @classmethod
@@ -405,12 +419,35 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
         self.__unmapped_cache__ = merged
         return dict(merged)
 
+    def get_raw_argv(self) -> list[str]:
+        """Return CLI argv tokens not consumed by mapped CLI options.
+
+        Returns:
+            Ordered list of leftover CLI tokens collected from runtime
+            datasource instances (for example ``CliSource``). Mapped field
+            options are excluded. A copy is returned.
+        """
+        raw_argv = getattr(self, "__raw_argv__", None)
+        if isinstance(raw_argv, list):
+            return list(raw_argv)
+
+        merged: list[str] = []
+        datasource_instances = getattr(self, "__datasource_instances__", ())
+        for datasource in datasource_instances:
+            source_raw_argv = getattr(datasource, "__raw_argv__", None)
+            if isinstance(source_raw_argv, list):
+                merged.extend(item for item in source_raw_argv if isinstance(item, str))
+
+        self.__raw_argv__ = merged
+        return list(merged)
+
 
 class DataSource(DataModel):
     """Base class for configuration sources that emit mapping patches.
 
     Subclasses implement :meth:`load`. Use :meth:`resolve` to run the full
-    source lifecycle (reset, normalize return shape, mapped/unmapped split).
+    source lifecycle (reset, normalize return shape, mapped/unmapped split,
+    and runtime state persistence).
     """
 
     def _normalize_load_result(
@@ -452,12 +489,14 @@ class DataSource(DataModel):
     def _reset_instance(self) -> None:
         """Reset per-load runtime state on this source instance.
 
-        This clears any previously collected unmapped keys.
+        This clears any previously collected unmapped keys and raw argv
+        leftovers.
 
         Returns:
             ``None``.
         """
         self.__unmapped_kwargs__ = {}
+        self.__raw_argv__ = []
 
     def _set_unmapped(self, unmapped: Mapping[str, Any]) -> None:
         """Store unmapped payload values on this source instance.
@@ -469,6 +508,15 @@ class DataSource(DataModel):
             ``None``.
         """
         self.__unmapped_kwargs__ = dict(unmapped)
+
+    def _set_raw_argv(self, raw_argv: list[str]) -> None:
+        """Store raw argv leftovers on this source instance.
+
+        Args:
+            raw_argv: Ordered CLI tokens that were not consumed as mapped
+                options for the target model.
+        """
+        self.__raw_argv__ = list(raw_argv)
 
     def _split_payload_against_model(
         self,
@@ -554,7 +602,7 @@ class DataSource(DataModel):
 
         This internal wrapper clears per-instance runtime state, calls
         :meth:`load`, validates the return shape, and finalizes the mapped
-        payload while persisting unmapped state.
+        payload while persisting runtime state.
 
         Args:
             model: Optional target model requesting data.

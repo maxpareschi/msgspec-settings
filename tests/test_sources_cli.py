@@ -7,7 +7,7 @@ import msgspec
 import pytest
 from msgspec import Meta
 
-from msgspec_config import CliSource, DataModel, entry
+from msgspec_config import CliSource, DataModel, datasources, entry
 from msgspec_config.sources import cli as _cli_mod
 
 from ._models import (
@@ -137,6 +137,33 @@ def test_unknown_options_are_collected(monkeypatch: pytest.MonkeyPatch) -> None:
     assert src.__unmapped_kwargs__["unknown-flag"] == ["value-1", "value-2"]
     assert src.__unmapped_kwargs__["x"] == "value-x"
     assert src.__unmapped_kwargs__["__positional__"] == ["positional"]
+
+
+def test_raw_argv_contains_only_unmapped_cli_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Raw argv should keep only CLI tokens not mapped to known options."""
+    monkeypatch.setattr(sys, "argv", ["prog", "--debug", "command", "test"])
+    src = CliSource()
+
+    data = src.resolve(model=SimpleModel)
+
+    assert data["debug"] is True
+    assert src.__raw_argv__ == ["command", "test"]
+
+
+def test_model_get_raw_argv_uses_clisource_runtime_state() -> None:
+    """DataModel should expose CliSource raw argv after datasource resolution."""
+
+    @datasources(CliSource(cli_args=["--debug", "command", "test"]))
+    class CliBackedModel(DataModel):
+        debug: bool = False
+
+    model = CliBackedModel()
+
+    assert model.debug is True
+    assert model.get_raw_argv() == ["command", "test"]
+    assert model.__raw_argv__ == ["command", "test"]
 
 
 def test_help_exits_with_code_zero(monkeypatch: pytest.MonkeyPatch) -> None:

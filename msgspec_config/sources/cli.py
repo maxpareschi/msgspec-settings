@@ -373,6 +373,9 @@ class CliSource(DataSource):
         CLI declarations are generated from model fields and aliases.
         Per-field behavior can be controlled via
         ``entry(..., cli=..., cli_flag=..., cli_short_flag=...)`` metadata.
+        CLI tokens not consumed by mapped options are persisted on source
+        runtime state via ``__raw_argv__`` and can be read from the model with
+        ``DataModel.get_raw_argv()``.
         Precedence is:
         - ``cli=False``: exclude field.
         - ``cli=True``: include field.
@@ -400,6 +403,8 @@ class CliSource(DataSource):
             - tuple ``(mapped, unmapped)`` when unknown CLI args are present.
             Mapped keys use encoded field names so payloads can be passed
             directly to ``msgspec.convert`` for aliased models.
+            Raw unmatched tokens (unknown options and positionals) are always
+            persisted on source runtime state in ``__raw_argv__``.
             Field inclusion is controlled by ``autogenerate`` and per-field
             ``cli`` metadata. ``cli_flag`` and ``cli_short_flag`` override
             emitted declarations for included fields. Automatic short-flag
@@ -709,6 +714,7 @@ class CliSource(DataSource):
             raise SystemExit(getattr(exc, "code", 0)) from None
 
         extra_args = list(ctx.args)
+        self._set_raw_argv(extra_args)
 
         raw_values: dict[str, Any] = ctx.params
         result: dict[str, Any] = {}

@@ -218,7 +218,8 @@ Key behavior:
 - `entry(..., cli=False)` excludes a field from CLI generation
 - `entry(..., cli=True)` force-includes a field when `autogenerate=False`
 - `entry(..., cli_flag=..., cli_short_flag=...)` overrides generated option names for that field
-- unknown CLI args are stored on source runtime state in `__unmapped_kwargs__`
+- unknown CLI args are stored on source runtime state in `__unmapped_kwargs__`, accessible also through method get_unmapped_payload()
+- unmatched CLI tokens (unknown flags and positionals) are stored on source runtime state in `__raw_argv__`, retrievable by method get_raw_argv()
 - set `kebab_case=False` to use dotted long flags (e.g. `--log.level`)
 - CLI accepts canonical and encoded/alias field names, and maps parsed values to encoded field names
 
@@ -232,6 +233,18 @@ Field policy precedence:
 src = CliSource(autogenerate=False, cli_args=["--server-host", "api"])
 data = src.resolve(model=AppConfig)
 print(data)
+```
+
+```python
+@datasources(CliSource())
+class CliApp(DataModel):
+    dev: bool = False
+
+
+# argv: ["prog", "--dev", "command", "test"]
+cfg = CliApp()
+print(cfg.dev)  # True
+print(cfg.get_raw_argv())  # ["command", "test"]
 ```
 
 ### `APISource`
@@ -291,6 +304,7 @@ Useful methods:
 - `model_json_schema(indent=...)` for JSON Schema export
 - `get_datasources_payload(*sources, **kwargs)` to retrieve merged source payloads manually
 - `get_unmapped_payload()` to lazily merge source runtime `__unmapped_kwargs__` in source order plus unknown constructor kwargs (merged last)
+- `get_raw_argv()` to read raw CLI leftovers (unknown flags/positionals after mapped CLI options are filtered out)
 
 Notes:
 - `from_data(...)` and `from_json(...)` ignore unknown keys.
