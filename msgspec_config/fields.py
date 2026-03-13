@@ -5,11 +5,12 @@ This module provides:
 - ``entry(...)``: field declaration helper with optional ``msgspec.Meta`` kwargs
 - ``entry(...)`` extra schema keys: ``hidden_if``, ``disabled_if``,
   ``parent_group``, ``ui_component``, ``cli``, ``cli_flag``, ``cli_short_flag``
-- ``group(...)``: grouped object/list/dict declaration helper
+- ``group(...)``: grouped object/list/dict declaration helper with metadata
 - ``apply_entry_defaults(...)``: metaclass rewrite pass used by ``DataModelMeta``
 """
 
 import inspect
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Annotated, Any, get_args, get_origin
 
@@ -179,10 +180,13 @@ class GroupInfo:
     Attributes:
         collapsed: UI hint for collapsed rendering.
         mutable: UI hint indicating mutable grouped value.
+        meta_kwargs: Deferred ``Meta`` keyword arguments plus arbitrary schema
+            keys.
     """
 
     collapsed: bool
     mutable: bool
+    meta_kwargs: dict[str, Any]
 
 
 def entry(value: Any = NODEFAULT, *, name: str | None = None, **kwargs: Any) -> Any:
@@ -297,6 +301,47 @@ def _group_default_factory_from_annotation(annotation: Any, field_name: str) -> 
     )
 
 
+def _build_group_meta(
+    meta_kwargs: dict[str, Any], *, collapsed: bool, mutable: bool
+) -> Meta:
+    """Build a ``Meta`` instance from ``group(...)`` keyword arguments.
+
+    Args:
+        meta_kwargs: ``group(...)`` keyword arguments excluding
+            ``collapsed``/``mutable``. ``msgspec.Meta`` parameters are
+            forwarded directly. Any non-``Meta`` key is stored under
+            ``Meta.extra_json_schema``.
+        collapsed: Whether to inject ``collapsed=True`` schema metadata.
+        mutable: Whether to inject ``mutable=True`` schema metadata.
+
+    Returns:
+        Constructed ``Meta`` object.
+    """
+    known = {k: v for k, v in meta_kwargs.items() if k in META_PARAMS}
+    schema_extras = {k: v for k, v in meta_kwargs.items() if k not in META_PARAMS}
+
+    extra_json_schema_raw = known.pop("extra_json_schema", None) or {}
+    if isinstance(extra_json_schema_raw, Mapping):
+        extra_json_schema = dict(extra_json_schema_raw)
+    else:
+        raise TypeError(
+            "group() 'extra_json_schema' must be a mapping, "
+            f"got {type(extra_json_schema_raw).__name__}"
+        )
+
+    if collapsed:
+        schema_extras["collapsed"] = True
+    if mutable:
+        schema_extras["mutable"] = True
+
+    if schema_extras:
+        extra_json_schema = {**extra_json_schema, **schema_extras}
+    if extra_json_schema:
+        known["extra_json_schema"] = extra_json_schema
+
+    return Meta(**known)
+
+
 def apply_entry_defaults(
     namespace: dict[str, Any], reserved_attributes: set[str]
 ) -> None:
@@ -336,17 +381,18 @@ def apply_entry_defaults(
         )
         namespace[name] = field(default=NODEFAULT, default_factory=default_factory)
 
-        extra: dict[str, Any] = {}
-        if value.collapsed:
-            extra["collapsed"] = True
-        if value.mutable:
-            extra["mutable"] = True
-        if extra:
-            meta_obj = Meta(extra_json_schema=extra)
+        if value.collapsed or value.mutable or value.meta_kwargs:
+            meta_obj = _build_group_meta(
+                value.meta_kwargs,
+                collapsed=value.collapsed,
+                mutable=value.mutable,
+            )
             annotations[name] = _annotated_with_meta(annotations[name], meta_obj)
 
 
-def group(*, collapsed: bool = False, mutable: bool = False) -> GroupInfo:
+def group(
+    *, collapsed: bool = False, mutable: bool = False, **kwargs: Any
+) -> GroupInfo:
     """Declare a grouped field inferred from its type annotation.
 
     Supported annotation shapes:
@@ -357,6 +403,9 @@ def group(*, collapsed: bool = False, mutable: bool = False) -> GroupInfo:
     Args:
         collapsed: Whether UI consumers should render this group collapsed.
         mutable: Whether UI consumers should treat this group as mutable.
+        **kwargs: ``msgspec.Meta`` parameters plus arbitrary schema keys.
+            ``Meta`` parameters are forwarded directly. Any non-``Meta`` key
+            is stored under ``Meta.extra_json_schema``.
 
     Returns:
         ``GroupInfo`` sentinel consumed during metaclass rewriting.
@@ -370,7 +419,7 @@ def group(*, collapsed: bool = False, mutable: bool = False) -> GroupInfo:
         )
     if type(mutable) is not bool:
         raise TypeError(f"group() 'mutable' must be bool, got {type(mutable).__name__}")
-    return GroupInfo(collapsed=collapsed, mutable=mutable)
+    return GroupInfo(collapsed=collapsed, mutable=mutable, meta_kwargs=dict(kwargs))
 
 
 __all__ = ("EntryInfo", "GroupInfo", "apply_entry_defaults", "entry", "group")

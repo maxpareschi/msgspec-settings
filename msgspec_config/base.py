@@ -234,10 +234,14 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
         """
         if datasource_instances is None:
             datasource_instances = ()
-        instance.__datasource_instances__ = datasource_instances
-        instance.__unmapped_cache__ = unmapped_cache
-        instance.__constructor_unmapped__ = (
-            constructor_unmapped if constructor_unmapped is not None else {}
+        msgspec.structs.force_setattr(
+            instance, "__datasource_instances__", datasource_instances
+        )
+        msgspec.structs.force_setattr(instance, "__unmapped_cache__", unmapped_cache)
+        msgspec.structs.force_setattr(
+            instance,
+            "__constructor_unmapped__",
+            constructor_unmapped if constructor_unmapped is not None else {},
         )
         raw_argv: list[str] = []
         for datasource in datasource_instances:
@@ -246,7 +250,7 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
                 raw_argv.extend(
                     item for item in source_raw_argv if isinstance(item, str)
                 )
-        instance.__raw_argv__ = raw_argv
+        msgspec.structs.force_setattr(instance, "__raw_argv__", raw_argv)
         return instance
 
     @classmethod
@@ -416,7 +420,7 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
         if isinstance(constructor_unmapped, Mapping) and constructor_unmapped:
             deep_merge_into(merged, constructor_unmapped)
 
-        self.__unmapped_cache__ = merged
+        msgspec.structs.force_setattr(self, "__unmapped_cache__", merged)
         return dict(merged)
 
     def get_raw_argv(self) -> list[str]:
@@ -438,7 +442,7 @@ class DataModel(msgspec.Struct, metaclass=DataModelMeta):
             if isinstance(source_raw_argv, list):
                 merged.extend(item for item in source_raw_argv if isinstance(item, str))
 
-        self.__raw_argv__ = merged
+        msgspec.structs.force_setattr(self, "__raw_argv__", merged)
         return list(merged)
 
 
@@ -495,8 +499,8 @@ class DataSource(DataModel):
         Returns:
             ``None``.
         """
-        self.__unmapped_kwargs__ = {}
-        self.__raw_argv__ = []
+        msgspec.structs.force_setattr(self, "__unmapped_kwargs__", {})
+        msgspec.structs.force_setattr(self, "__raw_argv__", [])
 
     def _set_unmapped(self, unmapped: Mapping[str, Any]) -> None:
         """Store unmapped payload values on this source instance.
@@ -507,7 +511,7 @@ class DataSource(DataModel):
         Returns:
             ``None``.
         """
-        self.__unmapped_kwargs__ = dict(unmapped)
+        msgspec.structs.force_setattr(self, "__unmapped_kwargs__", dict(unmapped))
 
     def _set_raw_argv(self, raw_argv: list[str]) -> None:
         """Store raw argv leftovers on this source instance.
@@ -516,7 +520,7 @@ class DataSource(DataModel):
             raw_argv: Ordered CLI tokens that were not consumed as mapped
                 options for the target model.
         """
-        self.__raw_argv__ = list(raw_argv)
+        msgspec.structs.force_setattr(self, "__raw_argv__", list(raw_argv))
 
     def _split_payload_against_model(
         self,

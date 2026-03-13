@@ -246,6 +246,58 @@ def test_group_with_schema_flags_rewrites_to_annotated_and_field() -> None:
     assert extra_json_schema.get("mutable") is True
 
 
+def test_group_supports_direct_meta_kwargs_and_arbitrary_schema_keys() -> None:
+    """group() should accept metadata kwargs without needing Annotated."""
+
+    class Child(DataModel):
+        value: int = 1
+
+    class Parent(DataModel):
+        child: Child = group(
+            description="Nested child",
+            cli_short_flag="ls",
+            ui_component="object-editor",
+            arbitrary_hint="custom",
+        )
+
+    ann = Parent.__annotations__["child"]
+    assert get_origin(ann) is Annotated
+    args = get_args(ann)
+    assert args[0] is Child
+    meta = args[1]
+    assert isinstance(meta, Meta)
+    assert getattr(meta, "description", None) == "Nested child"
+    extra_json_schema = getattr(meta, "extra_json_schema", None) or {}
+    assert extra_json_schema.get("cli_short_flag") == "ls"
+    assert extra_json_schema.get("ui_component") == "object-editor"
+    assert extra_json_schema.get("arbitrary_hint") == "custom"
+
+
+def test_group_metadata_merges_extra_json_schema_and_group_flags() -> None:
+    """group() metadata should merge extra_json_schema and override flags."""
+
+    class Child(DataModel):
+        value: int = 1
+
+    class Parent(DataModel):
+        child: Child = group(
+            collapsed=True,
+            mutable=True,
+            extra_json_schema={"collapsed": False, "from_meta": 1},
+            from_kwargs=2,
+        )
+
+    ann = Parent.__annotations__["child"]
+    args = get_args(ann)
+    meta = args[1]
+    assert isinstance(meta, Meta)
+    extra_json_schema = getattr(meta, "extra_json_schema", None) or {}
+    assert extra_json_schema.get("from_meta") == 1
+    assert extra_json_schema.get("from_kwargs") == 2
+    assert extra_json_schema.get("collapsed") is True
+    assert extra_json_schema.get("mutable") is True
+
+
 def test_group_invalid_hint_raises() -> None:
     """group() should reject unsupported annotations."""
     with pytest.raises(TypeError, match="group annotation must be object"):

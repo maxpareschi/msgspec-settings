@@ -196,3 +196,47 @@ def test_reserved_runtime_attribute_name_raises() -> None:
 
         class BadModel(DataModel):
             __unmapped_cache__: dict[str, Any] = {}
+
+
+def test_frozen_model_supports_internal_runtime_state_assignment() -> None:
+    """Frozen DataModel instances should still receive runtime internal state."""
+
+    class RuntimeSource(DataSource):
+        def load(
+            self,
+            model: type[DataModel] | None = None,
+        ) -> tuple[dict[str, Any], dict[str, Any]]:
+            self._set_raw_argv(["command", "test"])
+            return {"host": "source"}, {"unknown": "value"}
+
+    @datasources(RuntimeSource())
+    class FrozenApp(DataModel, frozen=True):
+        host: str = "default"
+
+    model = FrozenApp(extra=True)
+
+    assert model.host == "source"
+    assert model.get_unmapped_payload() == {"unknown": "value", "extra": True}
+    assert model.get_raw_argv() == ["command", "test"]
+
+
+def test_frozen_datasource_supports_runtime_state_assignment() -> None:
+    """Frozen DataSource instances should support runtime state updates."""
+
+    class FrozenSource(DataSource, frozen=True):
+        def load(
+            self,
+            model: type[DataModel] | None = None,
+        ) -> tuple[dict[str, Any], dict[str, Any]]:
+            self._set_raw_argv(["leftover"])
+            return {"host": "from-source"}, {"unknown": 1}
+
+    class App(DataModel):
+        host: str = "default"
+
+    src = FrozenSource()
+    data = src.resolve(model=App)
+
+    assert data == {"host": "from-source"}
+    assert src.__unmapped_kwargs__ == {"unknown": 1}
+    assert src.__raw_argv__ == ["leftover"]

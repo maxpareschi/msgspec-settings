@@ -7,7 +7,7 @@ import msgspec
 import pytest
 from msgspec import Meta
 
-from msgspec_config import CliSource, DataModel, datasources, entry
+from msgspec_config import CliSource, DataModel, datasources, entry, group
 from msgspec_config.sources import cli as _cli_mod
 
 from ._models import (
@@ -324,6 +324,19 @@ def test_entry_cli_short_flag_allows_opt_in_when_autogenerate_false(
 
     monkeypatch.setattr(sys, "argv", ["prog", "-H", "api"])
     assert CliSource(autogenerate=False).resolve(model=OptInShortModel)["host"] == "api"
+
+
+def test_group_cli_short_flag_sets_top_level_struct_json_option(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """group(..., cli_short_flag=...) should work without Annotated metadata."""
+
+    class GroupShortStructModel(DataModel):
+        log: LogModel = group(cli_short_flag="L")
+
+    monkeypatch.setattr(sys, "argv", ["prog", "-L", '{"level":"DEBUG"}'])
+    data = CliSource().resolve(model=GroupShortStructModel)
+    assert data["log"]["level"] == "DEBUG"
 
 
 def test_entry_cli_short_flag_overrides_auto_short_generation(

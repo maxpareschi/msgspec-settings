@@ -135,6 +135,9 @@ Use `group(...)` for nested object/list/dict fields inferred from annotations.
 Why it exists:
 - creates safe defaults for nested structures without shared state
 - adds optional UI/schema hints (`collapsed`, `mutable`)
+- accepts direct metadata kwargs without `Annotated[...]`
+  - `msgspec.Meta` kwargs are passed through
+  - arbitrary extra keys are stored under `Meta.extra_json_schema`
 
 ```python
 from msgspec_config import DataModel, group
@@ -148,6 +151,7 @@ class Parent(DataModel):
     child: Child = group(collapsed=True)
     children: list[Child] = group(mutable=True)
     by_name: dict[str, Child] = group(mutable=True)
+    server: Child = group(cli_short_flag="sv", ui_component="object-editor")
 ```
 
 Notes:
